@@ -1,0 +1,12 @@
+{
+  "recorded_at_utc": "2026-11-11T08:05:00Z",
+  "environment": "hosted deployment https://swapsafe.vercel.app, commit 2bde926",
+  "what": "Requests sent without the shop's cookie or the shopper's link against an order created by another browser, and a forged webhook.",
+  "results": [
+    { "request": "GET /api/orders/{id} (no cookie, no shopper link)", "status": 403 },
+    { "request": "GET /api/orders (no cookie)", "orders_listed": 0 },
+    { "request": "POST /api/orders/{id} {action: execute} (no cookie)", "status": 403 },
+    { "request": "POST /api/webhooks/paypal with an unsigned event", "response": { "received": true, "verification_status": "FAILURE" }, "stored": false }
+  ],
+  "local_build_same_commit": [{ "request": "POST /api/orders with Origin: https://evil.example", "status": 403 }]
+}
