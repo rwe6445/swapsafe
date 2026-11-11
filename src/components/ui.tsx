@@ -29,17 +29,25 @@ export function useOrder(id: string, token: string | null) {
     } catch { if (alive.current) setLoadError("Network problem. Retrying."); }
   }, [id, token]);
   useEffect(() => { alive.current = true; load(); const t = setInterval(load, 5000); return () => { alive.current = false; clearInterval(t); }; }, [load]);
-  const act = useCallback(async (label: string, body: Record<string, string> | FormData) => {
-    if (running.current) return null; // buttons stay focusable while busy (aria-disabled), so guard re-entry here
-    running.current = true; setBusy(label); setError(null); setNotice("Working…");
-    try {
-      const isForm = body instanceof FormData;
-      if (token) { if (isForm) body.set("token", token); else body.token = token; }
-      const r = await fetch(`/api/orders/${id}`, { method: "POST", body: isForm ? body : JSON.stringify(body), headers: isForm ? undefined : { "Content-Type": "application/json" } });
-      const j = await r.json();
-      if (!r.ok) { setError(j.message ?? "That did not work."); setNotice(""); return null; }
-      setView(j); setNotice(`Done. Order status: ${statusText((j as ShopView).order.status)}.`); return j as ShopView;
-    } catch { setError("Network problem. Nothing was changed."); setNotice(""); return null; } finally { running.current = false; setBusy(null); }
+  // Buttons stay focusable while busy (aria-disabled), so quick clicks are queued and run one after another, never dropped.
+  const queue = useRef<Promise<unknown>>(Promise.resolve()); const pending = useRef(0);
+  const act = useCallback((label: string, body: Record<string, string> | FormData): Promise<ShopView | null> => {
+    const run = async (): Promise<ShopView | null> => {
+      running.current = true; setBusy(label); setError(null); setNotice("Working…");
+      try {
+        const isForm = body instanceof FormData;
+        if (token) { if (isForm) body.set("token", token); else body.token = token; }
+        const r = await fetch(`/api/orders/${id}`, { method: "POST", body: isForm ? body : JSON.stringify(body), headers: isForm ? undefined : { "Content-Type": "application/json" } });
+        const j = await r.json();
+        if (!r.ok) { setError(j.message ?? "That did not work."); setNotice(""); return null; }
+        setView(j); setNotice(`Done. Order status: ${statusText((j as ShopView).order.status)}.`); return j as ShopView;
+      } catch { setError("Network problem. Nothing was changed."); setNotice(""); return null; }
+      finally { if (--pending.current === 0) { running.current = false; setBusy(null); } }
+    };
+    pending.current++;
+    const next = queue.current.then(run, run);
+    queue.current = next;
+    return next;
   }, [id, token]);
   return { view, error: error ?? loadError, notice, busy, act, reload: load };
 }
