@@ -80,6 +80,7 @@ export async function proposeSwap(store: Store, id: string, lineId: string, subs
   const result = await runSwapAgent({ line: line0, original, substitute, prefs: cur.order.prefs, photo: photoRec });
   return mutateOrder(store, id, (o) => {
     mustHeld(o); const l = mustLine(o, lineId);
+    if (l.status !== "out_of_stock") throw new ServiceError("NOT_OUT_OF_STOCK", "The line changed while the label was being read. Try again.", 409); // the agent run is slow; re-check
     const photoMeta = photoRec ? { id: photoRec.id, url: photoRec.url, sha256: photoRec.sha256 } : null;
     const sub: Substitution = {
       id: `sw_${short()}`, sku: substitute.sku, name: `${substitute.brand} ${substitute.name}`, size: substitute.size, listPriceCents: substitute.priceCents,
@@ -107,10 +108,14 @@ export async function recordConsent(store: Store, id: string, token: string, lin
 }
 
 /** Step 5a: the shop approves the settlement as computed now. This record is what the second lock checks. */
-export async function approveSettlement(store: Store, id: string, by: string) {
+export async function approveSettlement(store: Store, id: string, by: string, seenSettlementHash?: string) {
   return mutateOrder(store, id, (o) => {
     mustHeld(o); const s = computeSettlement(o);
     if (!s.ready) throw new ServiceError("NOT_READY", s.blockers[0], 409);
+    // The approval is for the settlement the shop was looking at, not whatever it has become since.
+    if (seenSettlementHash && seenSettlementHash !== s.hash) throw new ServiceError("SETTLEMENT_CHANGED", "The order changed while you were looking at it. Check the settlement again.", 409);
+    const existing = o.approvals.find((a) => a.settlementHash === s.hash);
+    if (existing) return existing;
     const approval = { id: `ap_${short()}`, by: by.slice(0, 40) || "shop", at: now(), settlementHash: s.hash, totalCents: s.totalCents };
     o.approvals.push(approval);
     o.timeline.push({ at: now(), tool: "shop_approval", input: `${s.action} ${fmt(s.totalCents)}`, output: `approved by ${approval.by}; settlement ${s.hash.slice(0, 10)}`, ms: 0, kind: "approval" });
@@ -138,7 +143,7 @@ export async function executeSettlement(store: Store, gw: PayPalGateway, id: str
     })).result;
   } catch (e) {
     if (!(e instanceof LockError)) throw e;
-    await mutateOrder(store, id, (o) => { ledger(o, `SETTLEMENT_REFUSED (${e.code})`, { detail: e.message }); }); // a refused attempt is part of the audit trail
+    await mutateOrder(store, id, (o) => { if (o.ledger.length < 200) ledger(o, `SETTLEMENT_REFUSED (${e.code})`, { detail: e.message }); }).catch(() => null); // a refused attempt is part of the audit trail
     throw new ServiceError(e.code, e.message, 409);
   }
   const cur = await store.getOrder(id);

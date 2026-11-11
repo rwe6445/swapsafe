@@ -88,7 +88,7 @@ export default function ShopOrder({ params }: { params: Promise<{ id: string }> 
         {open && settlement.blockers.length > 0 && <ul className="mt-2 list-disc pl-5 text-sm">{settlement.blockers.map((b) => <li key={b}>{b}</li>)}</ul>}
         {open && (
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <button type="button" className="btn" disabled={!settlement.ready || !!approval} aria-aria-disabled={!!busy} onClick={async () => { const v = await act("approve", { action: "approve", by: "shop owner (demo)" }); const a = v?.order.approvals.at(-1); if (a) { setApprovalId(a.id); setTimeout(() => executeRef.current?.focus(), 50); } }}>1. Approve this settlement</button>
+            <button type="button" className="btn" disabled={!settlement.ready || !!approval} aria-aria-disabled={!!busy} onClick={async () => { const v = await act("approve", { action: "approve", by: "shop owner (demo)", hash: settlement.hash }); const a = v?.order.approvals.at(-1); if (a) { setApprovalId(a.id); setTimeout(() => executeRef.current?.focus(), 50); } }}>1. Approve this settlement</button>
             <button type="button" ref={executeRef} className="btn btn-primary" disabled={!approval} aria-aria-disabled={!!busy} onClick={() => approval && act("execute", { action: "execute", approvalId: approval.id, totalCents: String(settlement.totalCents) })}>
               2. {settlement.action === "capture" ? `Capture ${fmt(settlement.totalCents)} and release ${fmt(settlement.releaseCents)}` : "Release the whole hold (void)"}</button>
             <p className="text-sm text-muted basis-full">The server recomputes the settlement and compares it with your approval record before it calls PayPal. Any change after step 1 cancels the approval.</p>

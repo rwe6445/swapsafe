@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { getStore } from "@/lib/store";
-import { restGateway, type PayPalGateway } from "@/lib/paypal";
+import { publicBaseUrl, restGateway, type PayPalGateway } from "@/lib/paypal";
 import { toolkitRefund } from "@/lib/toolkit";
 import { approveSettlement, authorizeOrder, executeSettlement, pickLine, proposeSwap, recordConsent, refundIssue, reportIssue, ServiceError } from "@/lib/service";
 import { computeSettlement } from "@/lib/settlement";
@@ -57,6 +57,9 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       }
       case "swap": {
         const aiLimited = rateLimit(req, "swap", 6); if (aiLimited) return aiLimited;
+        // Durable per-visitor daily budget for model calls, so one visitor cannot use up the shared daily cap.
+        const ip = (req.headers.get("x-forwarded-for") ?? "local").split(",")[0].trim();
+        if ((await store.bumpCounter(`swap:${new Date().toISOString().slice(0, 10)}:${ip}`)) > 60) throw new ServiceError("DAILY_LIMIT", "This visitor has reached today's limit for label checks. Try again tomorrow.", 429);
         const product = bySku(body.sku);
         if (!product) throw new ServiceError("UNKNOWN_SKU", "That product is not in the shop's catalog.");
         // Validate the order and line before anything is stored.
@@ -74,7 +77,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
           await store.putPhoto(photoId, mediaType, bytes);
           photo = { bytes, url: `/api/photos/${photoId}`, uploaded: true };
         } else if (body.sample === "1") {
-          const res = await fetch(new URL(product.labelImage, req.url), { cache: "force-cache" });
+          const res = await fetch(new URL(product.labelImage, publicBaseUrl() ?? req.url), { cache: "force-cache" }); // configured origin first, not the request's Host
           if (res.ok) photo = { bytes: new Uint8Array(await res.arrayBuffer()), url: product.labelImage };
         }
         ({ order } = await proposeSwap(store, id, body.lineId, body.sku, photo)); break;
@@ -83,7 +86,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         if (body.decision !== "accepted" && body.decision !== "declined") throw new ServiceError("BAD_DECISION", "Answer accepted or declined.");
         ({ order } = await recordConsent(store, id, body.token, body.lineId, body.decision, body.proposalHash ?? "")); break;
       }
-      case "approve": ({ order } = await approveSettlement(store, id, body.by ?? "shop")); break;
+      case "approve": ({ order } = await approveSettlement(store, id, body.by ?? "shop", body.hash)); break;
       case "execute": ({ order } = await executeSettlement(store, gateway, id, body.approvalId, Number(body.totalCents))); break;
       case "report": ({ order } = await reportIssue(store, id, body.token, body.lineId, body.note ?? "")); break;
       case "refund": ({ order } = await refundIssue(store, gateway, id, body.issueId, body.by ?? "shop")); break;

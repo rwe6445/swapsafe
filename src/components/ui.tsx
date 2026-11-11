@@ -41,7 +41,7 @@ export function useOrder(id: string, token: string | null) {
         const j = await r.json();
         if (!r.ok) { setError(j.message ?? "That did not work."); setNotice(""); return null; }
         setView(j); setNotice(`Done. Order status: ${statusText((j as ShopView).order.status)}.`); return j as ShopView;
-      } catch { setError("Network problem. Nothing was changed."); setNotice(""); return null; }
+      } catch { setError("No clear answer from the server. Check the order below before trying again."); setNotice(""); load(); return null; }
       finally { if (--pending.current === 0) { running.current = false; setBusy(null); } }
     };
     pending.current++;

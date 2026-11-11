@@ -125,7 +125,9 @@ The order-flow tests use a test double for PayPal that reproduces `PayPal-Reques
 - A label reading is only as good as the photo. Unreadable parts are listed, and the shopper sees the photo, but SwapSafe is not a medical device and does not replace reading the label.
 - A swap is never charged above the ordered item's price, so the shop absorbs the difference on a dearer substitute.
 - Authorizations are honored for 3 days and expire after 29; reauthorization is not implemented.
-- The per-IP rate limit is kept in memory per server instance.
+- The per-minute rate limit is kept in memory per server instance; the daily budget for label checks per visitor is kept in the database.
+- A verified webhook that arrives before the order record knows its PayPal id is stored but not attached to the order.
+- No Content-Security-Policy header yet; the app renders no user-supplied HTML.
 - `npm audit` reports advisories in packages that `@paypal/agent-toolkit` 1.11.0 depends on (its LangChain, OpenAI, mathjs and AI SDK 4 bindings). SwapSafe loads only the toolkit's `ai-sdk` entry and calls three tools from server code; the affected packages are not updated by a compatible version of the toolkit yet.
 
 ## Built during the hackathon
