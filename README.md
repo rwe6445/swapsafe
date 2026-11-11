@@ -8,7 +8,10 @@ Small grocers who pack online orders by hand run into the same problem every day
 
 ## Try it in 60 seconds
 
-Open https://swapsafe.vercel.app. When the PayPal window asks you to log in, use a PayPal sandbox personal (buyer) account.
+Open https://swapsafe.vercel.app. When the PayPal window asks you to log in, use this PayPal sandbox buyer. It is a test account with play money that PayPal's developer dashboard generated for judging; it is not a real PayPal account.
+
+- Sandbox buyer email: `sb-df47oc53855971@personal.example.com`
+- Sandbox buyer password: `uI$m>H3<`
 
 1. Open **Shopper: start a basket**, press **Fill a sample basket**, and approve the hold in the PayPal window.
 2. Open **Shop: pick orders**, open the order, mark lines **Picked** or **Out of stock**.
