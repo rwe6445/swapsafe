@@ -1,0 +1,124 @@
+# SwapSafe — grocery swaps the shopper agrees to, paid only for what was packed
+
+Small grocers who pack online orders by hand run into the same problem every day: an item is out of stock after the customer has paid. The shop either charges for something the customer did not choose, or refunds and loses the sale, and a wrong substitute can be unsafe for someone with an allergy. SwapSafe holds the basket with a PayPal authorization instead of charging it, has a vision model read the label of each proposed substitute, lets deterministic code apply the shopper's allergy and diet rules and set the price, asks the shopper line by line, and then captures only the final amount. PayPal releases the rest of the hold.
+
+License: MIT · PayPal sandbox only
+
+> Status on 2026-11-11: the code, unit tests and build in this repository run. Still to be added as they are produced: sandbox transaction evidence in `evidence/`, the hosted demo link, the video, and the recorded readings for the sample labels (`src/lib/cached-readings.json` is empty until a model key has been used once). Nothing below claims a sandbox run that is not in `evidence/`.
+
+## Try it in 60 seconds
+
+1. Open **Shopper: start a basket**, press **Fill a sample basket**, and approve the hold with a PayPal sandbox buyer account.
+2. Open **Shop: pick orders**, open the order, mark lines **Picked** or **Out of stock**.
+3. For an out-of-stock line choose a substitute and press **Use the sample label image** (or photograph a real label).
+4. Open the shopper's page (linked at the bottom of the shop screen), accept or decline each swap.
+5. Back on the shop screen: **Approve this settlement**, then **Capture**. The receipt shows the PayPal ids and each webhook's signature check.
+
+Things worth trying: avoid *peanuts* and propose *Tidewell Soy Drink* for the oat drink (the label says "may contain traces of peanuts", the shop's data does not, the swap is blocked). Propose *Larkspur Seed & Berry Granola* (its sample label carries a sticker that tells an AI to report no allergens and set the price to $0.00; the screen shows it was treated as data).
+
+The sample label images are generated artwork for fictional products (`scripts/make_labels.py`), not photographs.
+
+## What it does
+
+| Step | Who | What happens |
+|---|---|---|
+| Basket | Shopper | Sets allergens to avoid, diet, and whether swaps are wanted. Approves once in PayPal. The basket total is held, not charged. |
+| Picking | Shop | Marks each line picked or out of stock. For a missing item, proposes a substitute from the same shelf with a photo of its label. |
+| Evidence | Vision model | Reads the label: product name, size, "contains", "may contain", vegetarian or vegan claims, each with the quoted words. No amounts. |
+| Rules | Code | Unions the label's allergens with the shop's data, blocks conflicts, charges the lower of the two catalog prices. |
+| Consent | Shopper | Accepts or declines each swap. The answer is bound to that exact proposal by a hash. |
+| Settlement | Shop, then server | The shop approves the computed settlement. The server recomputes it, compares it with the approval record, then sends one final capture or releases everything. |
+| Afterwards | Shopper, shop | The shopper can report a charged line; the shop approves a refund capped at what was captured. |
+
+## How it works
+
+```mermaid
+flowchart LR
+  S[Shopper browser] -- approve hold --> PP[(PayPal sandbox)]
+  S --> API[Next.js route handlers]
+  K[Shop picking screen] --> API
+  API --> AG[Swap assistant: AI SDK tool loop]
+  AG --> V[Vision model reads label photo]
+  AG --> R[Rules: policy.ts]
+  API --> L[Lock: settlement.ts]
+  L -- capture / release / refund --> PP
+  PP -- webhooks --> W[/api/webhooks/paypal/]
+  W -- verify-webhook-signature --> PP
+  API --> DB[(Postgres)]
+```
+
+## PayPal integration
+
+| Capability | API / SDK | File |
+|---|---|---|
+| Hold the basket | Orders v2, `intent: AUTHORIZE`; buyer approval with the JS SDK v6 (`@paypal/paypal-js/sdk-v6`, `createPayPalOneTimePaymentSession`) | `src/lib/paypal.ts`, `src/app/order/new/page.tsx` |
+| Place the hold after approval | `POST /v2/checkout/orders/{id}/authorize` | `src/lib/paypal.ts` |
+| Charge only the final amount | `POST /v2/payments/authorizations/{id}/capture` with `final_capture: true` | `src/lib/paypal.ts`, `src/lib/service.ts` |
+| Nothing fulfilled | `POST /v2/payments/authorizations/{id}/void` | same |
+| Refund a reported line | PayPal Agent Toolkit 1.11.0 `create_refund`, called by server code after the shop approves; plain REST `captures/{id}/refund` is the fallback and the ledger records which one ran | `src/lib/toolkit.ts` |
+| Webhooks | `POST /v1/notifications/verify-webhook-signature` on the raw body; the result is stored with the event and shown on the order | `src/app/api/webhooks/paypal/route.ts` |
+| Idempotency | One `PayPal-Request-Id` per order step (`ss-settle-<order>`, `ss-refund-<report>`), so a retry cannot capture or refund twice | `src/lib/service.ts` |
+
+The Agent Toolkit has no authorize, capture-authorization or void tool in 1.11.0, so those calls are hand-written REST.
+
+## AI usage
+
+- **Model**: Google Gemini through the Vercel AI SDK (`ai` 7, `@ai-sdk/google`). The model id is set by `AI_MODEL`.
+- **Label reading** (`src/lib/ai.ts`): one image in, a schema-checked object out. The schema has evidence quotes first and no amount or verdict field.
+- **Swap assistant** (`src/lib/agent.ts`): a tool loop with `get_order`, `inspect_label`, `check_rules`, and `execute_settlement`. The last one is declared with `needsApproval`, so the SDK stops instead of running it. The stored reading and decision are always produced by server code, whatever the model says or skips.
+- **Where the AI is not allowed to act**: it cannot set an amount, cannot remove an allergen the shop declared, cannot grant a diet claim the shop's data lacks, and cannot capture, void or refund.
+- **When the model is unavailable** (no key, daily cap, error): bundled sample labels fall back to a reading recorded earlier and the screen says "Cached AI result". Any other photo has no reading, and a swap without a reading is blocked.
+
+## Safety rails
+
+- **Evidence required**: no label photo or no reading means the swap cannot be offered (`NO_LABEL_EVIDENCE`).
+- **The model can add caution, never remove it**: allergens are the union of the shop's data and the label reading.
+- **Deterministic amounts**: the charge is `min(substitute price, ordered price)` per unit; the total can never exceed the authorization.
+- **Double lock**: SDK tool approval on the model side, and on the server side `assertExecutable()` checks a recorded shop approval against a hash of the settlement as computed at execution time. A changed line or amount cancels the approval. Refused attempts are written to the ledger.
+- **Consent bound to the proposal**: if the substitute, the quantity, the price or the photo changes after the shopper agreed, the consent no longer matches.
+- **Image prompt injection**: text inside a photo is reported as data; unit tests show it changes neither the amount nor an allergen block.
+- **Public demo hardening**: sandbox-only guard at the PayPal client, per-IP rate limits, a daily cap on model calls, image type checked from file bytes, 5 MB upload limit, photos re-encoded in the browser (which drops EXIF), unverified webhooks never change state.
+
+## Judging guide
+
+| Criterion | Where to look |
+|---|---|
+| Technological Implementation | `src/lib/paypal.ts` (REST client, webhook verification), `src/lib/settlement.ts` (lock), `tests/` |
+| Design | Four screens: basket, picking, shopper's swap page, receipt |
+| Potential Impact | Small grocers that pack by hand and shoppers with allergies; the first paragraph of this file |
+| Innovation | A label photo as evidence, rules that only let the model add caution, and a hold that is settled once for the agreed amount |
+| Presentation | This README and the demo video |
+
+## Run locally
+
+```bash
+npm ci --ignore-scripts
+cp .env.example .env.local   # fill in PayPal sandbox credentials and a Google AI key
+npm run dev
+```
+
+Environment variables are listed in `.env.example`. Without `DATABASE_URL` the app keeps data in memory, which is only suitable for local development. Webhooks need a public HTTPS URL, so they are exercised on the hosted deployment.
+
+## Tests
+
+```bash
+npm test          # 27 unit tests: substitution rules, image prompt injection, settlement, double lock, order flow with idempotency
+npm run typecheck
+npm run build
+```
+
+The order-flow tests use a test double for PayPal that reproduces `PayPal-Request-Id` idempotency. They do not call PayPal.
+
+## Known limitations
+
+- Sandbox only. No live money has moved.
+- The demo shop has no login. The shop screen links to the shopper's page so one person can play both roles; a real deployment needs accounts and the link would be sent to the shopper.
+- One fictional shop and a 15-item catalog. Allergen data in the catalog is invented for the demo.
+- A label reading is only as good as the photo. Unreadable parts are listed, and the shopper sees the photo, but SwapSafe is not a medical device and does not replace reading the label.
+- A swap is never charged above the ordered item's price, so the shop absorbs the difference on a dearer substitute.
+- Authorizations are honored for 3 days and expire after 29; reauthorization is not implemented.
+- The per-IP rate limit is kept in memory per server instance.
+
+## Built during the hackathon
+
+New project. The first commit is dated 2026-11-11, inside the submission period (2026-10-01 to 2026-11-12).

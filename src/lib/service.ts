@@ -174,6 +174,8 @@ export async function applyWebhook(store: Store, ev: { id: string; event_type: s
   const rel = ev.resource?.supplementary_data?.related_ids ?? {};
   let orderId: string | null = null;
   for (const pid of [resourceId, rel.authorization_id, rel.capture_id, rel.order_id]) { if (pid && (orderId = await store.findByPayPalId(pid))) break; }
+  // An unverified event that matches no order is dropped: anyone can POST to a public webhook URL.
+  if (verified === "FAILURE" && !orderId) return { fresh: false, orderId: null };
   const fresh = await store.recordWebhook({ id: ev.id, eventType: ev.event_type, resourceId, verified, at: now(), orderId: orderId ?? undefined });
   if (fresh && orderId) await mutateOrder(store, orderId, (o) => { ledger(o, `WEBHOOK ${ev.event_type}`, { paypalId: resourceId, verified, detail: `event ${ev.id}` }); });
   return { fresh, orderId };

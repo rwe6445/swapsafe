@@ -5,7 +5,7 @@ export const SHOP_NAME = "Marigold Corner Market (demo shop)";
 
 const p = (sku: string, name: string, brand: string, size: string, priceCents: number, category: string,
   allergens: Product["allergens"], mayContain: Product["mayContain"], diets: Product["diets"]): Product =>
-  ({ sku, name, brand, size, priceCents, category, allergens, mayContain, diets, labelImage: `/labels/${sku}.svg` });
+  ({ sku, name, brand, size, priceCents, category, allergens, mayContain, diets, labelImage: `/labels/${sku}.png` });
 
 export const CATALOG: Product[] = [
   p("oat-milk-1l", "Oat Drink Original", "Fernhill", "1 L", 399, "plant-milk", [], [], ["vegetarian", "vegan"]),

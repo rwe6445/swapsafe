@@ -1,0 +1,22 @@
+@import "tailwindcss";
+@theme {
+  --color-paper: #f6f3ea; --color-card: #fffdf7; --color-ink: #17231c; --color-muted: #55615a; --color-line: #d9d3c2;
+  --color-leaf: #1f5a3d; --color-leaf-dark: #17442e; --color-marigold: #f2b632; --color-stop: #9b1c1c; --color-stop-bg: #fbeaea; --color-ok-bg: #e4f1e7; --color-wait-bg: #fdf1cf;
+  --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+html { background: var(--color-paper); color: var(--color-ink); }
+body { font-family: var(--font-sans); line-height: 1.5; }
+:focus-visible { outline: 3px solid var(--color-leaf); outline-offset: 2px; border-radius: 4px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 44px; padding: .55rem 1rem; border-radius: 8px; font-weight: 600; border: 1.5px solid var(--color-ink); background: var(--color-card); color: var(--color-ink); cursor: pointer; }
+.btn:hover:not(:disabled) { background: #efe9d8; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-primary { background: var(--color-leaf); border-color: var(--color-leaf); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: var(--color-leaf-dark); }
+.btn-danger { border-color: var(--color-stop); color: var(--color-stop); }
+.card { background: var(--color-card); border: 1px solid var(--color-line); border-radius: 12px; padding: 1.1rem 1.25rem; }
+.mono { font-family: var(--font-mono); font-size: .85em; word-break: break-all; }
+.pill { display: inline-block; padding: .1rem .55rem; border-radius: 999px; font-size: .78rem; font-weight: 700; border: 1px solid currentColor; white-space: nowrap; }
+h1 { font-size: 1.7rem; font-weight: 800; letter-spacing: -.01em; line-height: 1.2; }
+h2 { font-size: 1.15rem; font-weight: 750; }
+table { width: 100%; border-collapse: collapse; } th { text-align: left; font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--color-muted); } th, td { padding: .45rem .5rem; border-bottom: 1px solid var(--color-line); vertical-align: top; }
