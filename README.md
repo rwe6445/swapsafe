@@ -56,7 +56,7 @@ flowchart LR
 | Charge only the final amount | `POST /v2/payments/authorizations/{id}/capture` with `final_capture: true` | `src/lib/paypal.ts`, `src/lib/service.ts` |
 | Nothing fulfilled | `POST /v2/payments/authorizations/{id}/void` | same |
 | Refund a reported line | PayPal Agent Toolkit 1.11.0 `create_refund`, called by server code after the shop approves; plain REST `captures/{id}/refund` is the fallback and the ledger records which one ran | `src/lib/toolkit.ts` |
-| Webhooks | `POST /v1/notifications/verify-webhook-signature` on the raw body; the result is stored with the event and shown on the order | `src/app/api/webhooks/paypal/route.ts` |
+| Webhooks | The deployment registers a webhook for its own URL (`/v1/notifications/webhooks`) and checks every event with `POST /v1/notifications/verify-webhook-signature` on the raw body; the result is stored with the event and shown on the order | `src/lib/paypal.ts`, `src/app/api/webhooks/paypal/route.ts` |
 | Idempotency | One `PayPal-Request-Id` per order step (`ss-settle-<order>`, `ss-refund-<report>`), so a retry cannot capture or refund twice | `src/lib/service.ts` |
 
 The Agent Toolkit has no authorize, capture-authorization or void tool in 1.11.0, so those calls are hand-written REST.

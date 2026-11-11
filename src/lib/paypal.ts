@@ -93,8 +93,36 @@ export const restGateway: PayPalGateway = {
  * Verify a webhook with PayPal's verify-webhook-signature call. The event body is embedded byte-for-byte:
  * re-serialising it can change the bytes PayPal signed.
  */
+export const WEBHOOK_EVENTS = ["PAYMENT.AUTHORIZATION.CREATED", "PAYMENT.AUTHORIZATION.VOIDED", "PAYMENT.CAPTURE.COMPLETED", "PAYMENT.CAPTURE.REFUNDED"];
+let knownWebhookId: string | null = null;
+
+/** The deployment's own public origin. Only configuration is trusted here, never a request's Host header. */
+export function publicBaseUrl(): string | null {
+  const explicit = process.env.APP_BASE_URL;
+  if (explicit?.startsWith("https://")) return explicit.replace(/\/$/, "");
+  const prod = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  return prod ? `https://${prod}` : null;
+}
+
+/**
+ * The webhook id PayPal signs against. If PAYPAL_WEBHOOK_ID is not set, the app looks up the webhook registered for
+ * its own URL on the sandbox app and registers one the first time, so a fresh deployment needs no manual step.
+ */
+export async function ensureWebhook(): Promise<string | null> {
+  if (process.env.PAYPAL_WEBHOOK_ID) return process.env.PAYPAL_WEBHOOK_ID;
+  if (knownWebhookId) return knownWebhookId;
+  const base = publicBaseUrl();
+  if (!base || !paypalConfigured()) return null;
+  const url = `${base}/api/webhooks/paypal`;
+  const find = async () => (await call<{ webhooks?: { id: string; url: string }[] }>("GET", "/v1/notifications/webhooks")).data.webhooks?.find((w) => w.url === url)?.id ?? null;
+  try {
+    knownWebhookId = (await find()) ?? (await call<{ id: string }>("POST", "/v1/notifications/webhooks", { url, event_types: WEBHOOK_EVENTS.map((name) => ({ name })) })).data.id;
+  } catch { knownWebhookId = await find().catch(() => null); }
+  return knownWebhookId;
+}
+
 export async function verifyWebhook(headers: Headers, rawBody: string): Promise<{ status: "SUCCESS" | "FAILURE"; debugId?: string }> {
-  const webhookId = process.env.PAYPAL_WEBHOOK_ID;
+  const webhookId = await ensureWebhook();
   const h = (k: string) => headers.get(k) ?? "";
   if (!webhookId || !h("paypal-transmission-id")) return { status: "FAILURE" };
   const envelope = JSON.stringify({

@@ -1,5 +1,5 @@
 import { getStore } from "@/lib/store";
-import { restGateway } from "@/lib/paypal";
+import { ensureWebhook, restGateway } from "@/lib/paypal";
 import { createOrder } from "@/lib/service";
 import { computeSettlement } from "@/lib/settlement";
 import { rateLimit } from "@/lib/guard";
@@ -24,6 +24,7 @@ export async function POST(req: Request) {
   const limited = rateLimit(req, "create", 8); if (limited) return limited;
   try {
     const body = await req.json().catch(() => ({}));
+    await ensureWebhook().catch(() => null); // so the first hold already produces a verifiable event
     return Response.json(await createOrder(getStore(), restGateway, body), { status: 201 });
   } catch (e) { return fail(e); }
 }
