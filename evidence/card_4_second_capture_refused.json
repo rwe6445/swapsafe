@@ -1,0 +1,34 @@
+{
+  "recorded_at_utc": "2026-11-11T06:40:29Z",
+  "environment": "PayPal sandbox",
+  "step": "4_second_capture_refused",
+  "request": {
+    "method": "POST",
+    "url": "https://api-m.sandbox.paypal.com/v2/payments/authorizations/89333191KL7023012/capture",
+    "headers": {
+      "PayPal-Request-Id": "spike-cap2-1794379224"
+    },
+    "body": {
+      "amount": {
+        "currency_code": "USD",
+        "value": "1.00"
+      },
+      "final_capture": true
+    }
+  },
+  "response": {
+    "status": 422,
+    "paypal_debug_id": "f5879205ce986",
+    "body": {
+      "name": "UNPROCESSABLE_ENTITY",
+      "message": "The requested action could not be performed, semantically incorrect, or failed business validation.",
+      "debug_id": "f5879205ce986",
+      "details": [
+        {
+          "issue": "AUTHORIZATION_ALREADY_CAPTURED",
+          "description": "Authorization has already been captured."
+        }
+      ]
+    }
+  }
+}

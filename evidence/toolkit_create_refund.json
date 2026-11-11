@@ -1,0 +1,248 @@
+{
+  "recorded_at_utc": "2026-11-11T06:41:16.655Z",
+  "environment": "PayPal sandbox",
+  "via": "PayPal Agent Toolkit 1.11.0 (ai-sdk binding), tools create_refund, get_refund, get_order",
+  "equivalent_rest": "POST /v2/payments/captures/{id}/refund",
+  "calls": [
+    {
+      "tool": "create_refund",
+      "args": {
+        "capture_id": "2GG61929Y3511432V",
+        "amount": {
+          "currency_code": "USD",
+          "value": "1.00"
+        },
+        "note_to_payer": "SwapSafe spike: refund through the Agent Toolkit"
+      },
+      "result": {
+        "id": "0H982369LY046223Y",
+        "status": "COMPLETED"
+      }
+    },
+    {
+      "tool": "get_refund",
+      "args": {
+        "refund_id": "0H982369LY046223Y"
+      },
+      "result": {
+        "id": "0H982369LY046223Y",
+        "amount": {
+          "currency_code": "USD",
+          "value": "1.00"
+        },
+        "note_to_payer": "SwapSafe spike: refund through the Agent Toolkit",
+        "seller_payable_breakdown": {
+          "gross_amount": {
+            "currency_code": "USD",
+            "value": "1.00"
+          },
+          "paypal_fee": {
+            "currency_code": "USD",
+            "value": "0.00"
+          },
+          "net_amount": {
+            "currency_code": "USD",
+            "value": "1.00"
+          },
+          "total_refunded_amount": {
+            "currency_code": "USD",
+            "value": "4.29"
+          }
+        },
+        "invoice_id": "spike-card-1794379224",
+        "status": "COMPLETED",
+        "create_time": "2026-11-10T22:41:14-08:00",
+        "update_time": "2026-11-10T22:41:14-08:00",
+        "payer": {
+          "email_address": "sb-lo7nz53787734@business.example.com",
+          "merchant_id": "XKUVWQZR4484Y"
+        }
+      }
+    },
+    {
+      "tool": "get_order",
+      "args": {
+        "id": "0FX51757335195905"
+      },
+      "result": {
+        "id": "0FX51757335195905",
+        "intent": "AUTHORIZE",
+        "status": "COMPLETED",
+        "payment_source": {
+          "card": {
+            "name": "Sandbox Shopper",
+            "last_digits": "1111",
+            "expiry": "2030-01",
+            "brand": "VISA",
+            "type": "UNKNOWN",
+            "bin_details": {}
+          }
+        },
+        "purchase_units": [
+          {
+            "reference_id": "spike-card",
+            "amount": {
+              "currency_code": "USD",
+              "value": "19.75",
+              "breakdown": {}
+            },
+            "payee": {
+              "email_address": "sb-lo7nz53787734@business.example.com",
+              "merchant_id": "XKUVWQZR4484Y"
+            },
+            "description": "Grocery basket, held until picked",
+            "soft_descriptor": "TEST STORE",
+            "payments": {
+              "authorizations": [
+                {
+                  "status": "CAPTURED",
+                  "id": "89333191KL7023012",
+                  "amount": {
+                    "currency_code": "USD",
+                    "value": "19.75"
+                  },
+                  "seller_protection": {
+                    "status": "NOT_ELIGIBLE"
+                  },
+                  "processor_response": {
+                    "avs_code": "A",
+                    "cvv_code": "M",
+                    "response_code": "0000"
+                  },
+                  "expiration_time": "2026-12-10T06:40:12Z",
+                  "create_time": "2026-11-11T06:40:12Z",
+                  "update_time": "2026-11-11T06:40:25Z",
+                  "network_transaction_reference": {
+                    "id": "564308390477671",
+                    "network": "VISA"
+                  }
+                }
+              ],
+              "captures": [
+                {
+                  "id": "2GG61929Y3511432V",
+                  "status": "PARTIALLY_REFUNDED",
+                  "amount": {
+                    "currency_code": "USD",
+                    "value": "11.77"
+                  },
+                  "final_capture": true,
+                  "disbursement_mode": "INSTANT",
+                  "seller_protection": {
+                    "status": "NOT_ELIGIBLE"
+                  },
+                  "seller_receivable_breakdown": {
+                    "gross_amount": {
+                      "currency_code": "USD",
+                      "value": "11.77"
+                    },
+                    "paypal_fee": {
+                      "currency_code": "USD",
+                      "value": "0.79"
+                    },
+                    "net_amount": {
+                      "currency_code": "USD",
+                      "value": "10.98"
+                    }
+                  },
+                  "invoice_id": "spike-card-1794379224",
+                  "create_time": "2026-11-11T06:40:25Z",
+                  "update_time": "2026-11-11T06:41:14Z",
+                  "network_transaction_reference": {
+                    "id": "564308390477671",
+                    "network": "VISA"
+                  },
+                  "processor_response": {
+                    "avs_code": "A",
+                    "cvv_code": "M",
+                    "response_code": "0000"
+                  }
+                }
+              ],
+              "refunds": [
+                {
+                  "id": "2N5393084T701000S",
+                  "amount": {
+                    "currency_code": "USD",
+                    "value": "3.29"
+                  },
+                  "note_to_payer": "SwapSafe spike: item arrived damaged",
+                  "seller_payable_breakdown": {
+                    "gross_amount": {
+                      "currency_code": "USD",
+                      "value": "3.29"
+                    },
+                    "paypal_fee": {
+                      "currency_code": "USD",
+                      "value": "0.00"
+                    },
+                    "platform_fees": [
+                      {
+                        "amount": {
+                          "currency_code": "USD",
+                          "value": "0.00"
+                        }
+                      }
+                    ],
+                    "net_amount": {
+                      "currency_code": "USD",
+                      "value": "3.29"
+                    },
+                    "total_refunded_amount": {
+                      "currency_code": "USD",
+                      "value": "4.29"
+                    }
+                  },
+                  "invoice_id": "spike-card-1794379224",
+                  "status": "COMPLETED",
+                  "create_time": "2026-11-10T22:40:30-08:00",
+                  "update_time": "2026-11-10T22:40:30-08:00"
+                },
+                {
+                  "id": "0H982369LY046223Y",
+                  "amount": {
+                    "currency_code": "USD",
+                    "value": "1.00"
+                  },
+                  "note_to_payer": "SwapSafe spike: refund through the Agent Toolkit",
+                  "seller_payable_breakdown": {
+                    "gross_amount": {
+                      "currency_code": "USD",
+                      "value": "1.00"
+                    },
+                    "paypal_fee": {
+                      "currency_code": "USD",
+                      "value": "0.00"
+                    },
+                    "platform_fees": [
+                      {
+                        "amount": {
+                          "currency_code": "USD",
+                          "value": "0.00"
+                        }
+                      }
+                    ],
+                    "net_amount": {
+                      "currency_code": "USD",
+                      "value": "1.00"
+                    },
+                    "total_refunded_amount": {
+                      "currency_code": "USD",
+                      "value": "4.29"
+                    }
+                  },
+                  "invoice_id": "spike-card-1794379224",
+                  "status": "COMPLETED",
+                  "create_time": "2026-11-10T22:41:14-08:00",
+                  "update_time": "2026-11-10T22:41:14-08:00"
+                }
+              ]
+            }
+          }
+        ],
+        "create_time": "2026-11-11T06:40:12Z",
+        "update_time": "2026-11-11T06:40:25Z"
+      }
+    }
+  ]
+}

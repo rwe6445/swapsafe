@@ -1,0 +1,47 @@
+{
+  "recorded_at_utc": "2026-11-11T06:40:28Z",
+  "environment": "PayPal sandbox",
+  "step": "3_get_authorization_after_capture",
+  "request": {
+    "method": "GET",
+    "url": "https://api-m.sandbox.paypal.com/v2/payments/authorizations/89333191KL7023012",
+    "headers": {},
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "paypal_debug_id": "f5879206d04bb",
+    "body": {
+      "id": "89333191KL7023012",
+      "status": "CAPTURED",
+      "amount": {
+        "currency_code": "USD",
+        "value": "19.75"
+      },
+      "seller_protection": {
+        "status": "NOT_ELIGIBLE"
+      },
+      "processor_response": {
+        "avs_code": "A",
+        "cvv_code": "M",
+        "response_code": "0000"
+      },
+      "supplementary_data": {
+        "related_ids": {
+          "order_id": "0FX51757335195905"
+        }
+      },
+      "payee": {
+        "email_address": "sb-lo7nz53787734@business.example.com",
+        "merchant_id": "XKUVWQZR4484Y"
+      },
+      "expiration_time": "2026-12-10T06:40:12Z",
+      "create_time": "2026-11-11T06:40:12Z",
+      "update_time": "2026-11-11T06:40:25Z",
+      "network_transaction_reference": {
+        "id": "564308390477671",
+        "network": "VISA"
+      }
+    }
+  }
+}

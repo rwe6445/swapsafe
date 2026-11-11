@@ -1,0 +1,58 @@
+{
+  "recorded_at_utc": "2026-11-11T06:40:26Z",
+  "environment": "PayPal sandbox",
+  "step": "2_partial_capture_final",
+  "request": {
+    "method": "POST",
+    "url": "https://api-m.sandbox.paypal.com/v2/payments/authorizations/89333191KL7023012/capture",
+    "headers": {
+      "PayPal-Request-Id": "spike-cap-1794379224"
+    },
+    "body": {
+      "amount": {
+        "currency_code": "USD",
+        "value": "11.77"
+      },
+      "final_capture": true,
+      "invoice_id": "spike-card-1794379224"
+    }
+  },
+  "response": {
+    "status": 201,
+    "paypal_debug_id": "f653646175e65",
+    "body": {
+      "id": "2GG61929Y3511432V",
+      "amount": {
+        "currency_code": "USD",
+        "value": "11.77"
+      },
+      "final_capture": true,
+      "seller_protection": {
+        "status": "NOT_ELIGIBLE"
+      },
+      "seller_receivable_breakdown": {
+        "gross_amount": {
+          "currency_code": "USD",
+          "value": "11.77"
+        },
+        "paypal_fee": {
+          "currency_code": "USD",
+          "value": "0.79"
+        },
+        "net_amount": {
+          "currency_code": "USD",
+          "value": "10.98"
+        },
+        "exchange_rate": {}
+      },
+      "invoice_id": "spike-card-1794379224",
+      "status": "COMPLETED",
+      "create_time": "2026-11-11T06:40:25Z",
+      "update_time": "2026-11-11T06:40:25Z",
+      "network_transaction_reference": {
+        "id": "564308390477671",
+        "network": "VISA"
+      }
+    }
+  }
+}

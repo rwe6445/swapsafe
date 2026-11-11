@@ -1,0 +1,31 @@
+{
+  "recorded_at_utc": "2026-11-11T06:40:35Z",
+  "environment": "PayPal sandbox",
+  "step": "2_void",
+  "request": {
+    "method": "POST",
+    "url": "https://api-m.sandbox.paypal.com/v2/payments/authorizations/6M083310VL759960K/void",
+    "headers": {
+      "PayPal-Request-Id": "spike-void-1794379224"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "paypal_debug_id": "f182472d24e91",
+    "body": {
+      "id": "6M083310VL759960K",
+      "status": "VOIDED",
+      "amount": {
+        "currency_code": "USD",
+        "value": "7.98"
+      },
+      "seller_protection": {
+        "status": "NOT_ELIGIBLE"
+      },
+      "expiration_time": "2026-12-09T22:40:33-08:00",
+      "create_time": "2026-11-10T22:40:33-08:00",
+      "update_time": "2026-11-10T22:40:35-08:00"
+    }
+  }
+}

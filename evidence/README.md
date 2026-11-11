@@ -1,1 +1,18 @@
-Sandbox request/response records are added here after the first real sandbox run (secrets removed).
+# Sandbox evidence
+
+Request and response records from real calls to the PayPal sandbox (`api-m.sandbox.paypal.com`), written by a spike script on 2026-11-11 (UTC). Access tokens are never stored; `links` arrays are dropped; the test card number is redacted.
+
+| File | What it shows |
+|---|---|
+| `wallet_1_create_order_authorize.json` | `POST /v2/checkout/orders` with `intent: AUTHORIZE` for the PayPal wallet flow; PayPal answers `PAYER_ACTION_REQUIRED` |
+| `card_1_create_order_authorize_card.json` | An AUTHORIZE order paid with a sandbox test card: authorization `CREATED` for 19.75 USD |
+| `card_2_partial_capture_final.json` | `POST /v2/payments/authorizations/{id}/capture` for 11.77 USD with `final_capture: true`: `COMPLETED` |
+| `card_2b_same_request_id_retry.json` | The same call repeated with the same `PayPal-Request-Id`: PayPal returns the same capture id, no second capture |
+| `card_3_get_authorization_after_capture.json` | The authorization now reads `CAPTURED` |
+| `card_4_second_capture_refused.json` | A further capture is refused: 422 `AUTHORIZATION_ALREADY_CAPTURED` |
+| `card_5_partial_refund_rest.json` | `POST /v2/payments/captures/{id}/refund` for 3.29 USD: `COMPLETED` |
+| `toolkit_create_refund.json` | PayPal Agent Toolkit 1.11.0 tools `create_refund`, `get_refund`, `get_order` called for real (refund of 1.00 USD: `COMPLETED`) |
+| `toolkit_tools.json` | The toolkit tools SwapSafe enables |
+| `voidcard_1_create_order_authorize_card.json`, `voidcard_2_void.json`, `voidcard_3_get_authorization_after_void.json` | An authorization of 7.98 USD released with `POST /v2/payments/authorizations/{id}/void`: `VOIDED` |
+
+The card runs were used to exercise the Payments v2 calls without a browser. Buyer approval through the JS SDK v6 and webhook signature verification are recorded separately once they have run on the hosted deployment.

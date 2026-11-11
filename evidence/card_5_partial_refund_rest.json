@@ -1,0 +1,53 @@
+{
+  "recorded_at_utc": "2026-11-11T06:40:31Z",
+  "environment": "PayPal sandbox",
+  "step": "5_partial_refund_rest",
+  "request": {
+    "method": "POST",
+    "url": "https://api-m.sandbox.paypal.com/v2/payments/captures/2GG61929Y3511432V/refund",
+    "headers": {
+      "PayPal-Request-Id": "spike-ref-1794379224"
+    },
+    "body": {
+      "amount": {
+        "currency_code": "USD",
+        "value": "3.29"
+      },
+      "note_to_payer": "SwapSafe spike: item arrived damaged"
+    }
+  },
+  "response": {
+    "status": 201,
+    "paypal_debug_id": "f108849d8838d",
+    "body": {
+      "id": "2N5393084T701000S",
+      "amount": {
+        "currency_code": "USD",
+        "value": "3.29"
+      },
+      "note_to_payer": "SwapSafe spike: item arrived damaged",
+      "seller_payable_breakdown": {
+        "gross_amount": {
+          "currency_code": "USD",
+          "value": "3.29"
+        },
+        "paypal_fee": {
+          "currency_code": "USD",
+          "value": "0.00"
+        },
+        "net_amount": {
+          "currency_code": "USD",
+          "value": "3.29"
+        },
+        "total_refunded_amount": {
+          "currency_code": "USD",
+          "value": "3.29"
+        }
+      },
+      "invoice_id": "spike-card-1794379224",
+      "status": "COMPLETED",
+      "create_time": "2026-11-10T22:40:30-08:00",
+      "update_time": "2026-11-10T22:40:30-08:00"
+    }
+  }
+}

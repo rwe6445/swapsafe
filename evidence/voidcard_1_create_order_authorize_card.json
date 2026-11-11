@@ -1,0 +1,102 @@
+{
+  "recorded_at_utc": "2026-11-11T06:40:34Z",
+  "environment": "PayPal sandbox",
+  "step": "1_create_order_authorize_card",
+  "request": {
+    "method": "POST",
+    "url": "https://api-m.sandbox.paypal.com/v2/checkout/orders",
+    "headers": {
+      "PayPal-Request-Id": "spike-voidcard-1794379224"
+    },
+    "body": {
+      "intent": "AUTHORIZE",
+      "purchase_units": [
+        {
+          "reference_id": "spike-void",
+          "amount": {
+            "currency_code": "USD",
+            "value": "7.98"
+          }
+        }
+      ],
+      "payment_source": {
+        "card": {
+          "number": "<PayPal sandbox test Visa, redacted>",
+          "expiry": "2030-01",
+          "security_code": "<redacted>",
+          "name": "Sandbox Shopper",
+          "billing_address": {
+            "address_line_1": "1 Main St",
+            "admin_area_2": "San Jose",
+            "admin_area_1": "CA",
+            "postal_code": "95131",
+            "country_code": "US"
+          }
+        }
+      }
+    }
+  },
+  "response": {
+    "status": 201,
+    "paypal_debug_id": "f546699b5e80e",
+    "body": {
+      "id": "2UV3191073212993J",
+      "intent": "AUTHORIZE",
+      "status": "COMPLETED",
+      "payment_source": {
+        "card": {
+          "name": "Sandbox Shopper",
+          "last_digits": "1111",
+          "expiry": "2030-01",
+          "brand": "VISA",
+          "type": "UNKNOWN",
+          "bin_details": {}
+        }
+      },
+      "purchase_units": [
+        {
+          "reference_id": "spike-void",
+          "amount": {
+            "currency_code": "USD",
+            "value": "7.98"
+          },
+          "payee": {
+            "email_address": "sb-lo7nz53787734@business.example.com",
+            "merchant_id": "XKUVWQZR4484Y"
+          },
+          "soft_descriptor": "TEST STORE",
+          "payments": {
+            "authorizations": [
+              {
+                "status": "CREATED",
+                "id": "6M083310VL759960K",
+                "amount": {
+                  "currency_code": "USD",
+                  "value": "7.98"
+                },
+                "seller_protection": {
+                  "status": "NOT_ELIGIBLE"
+                },
+                "processor_response": {
+                  "avs_code": "A",
+                  "cvv_code": "M",
+                  "response_code": "0000"
+                },
+                "expiration_time": "2026-12-10T06:40:33Z",
+                "create_time": "2026-11-11T06:40:33Z",
+                "update_time": "2026-11-11T06:40:33Z",
+                "network_transaction_reference": {
+                  "id": "660277726896429",
+                  "network": "VISA"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "create_time": "2026-11-11T06:40:33Z",
+      "update_time": "2026-11-11T06:40:33Z"
+    }
+  },
+  "note": "Spike run with a sandbox test card so no browser login was needed. The product flow uses buyer approval through the PayPal JS SDK v6."
+}

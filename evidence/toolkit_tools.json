@@ -1,0 +1,18 @@
+{
+  "package": "@paypal/agent-toolkit",
+  "version": "1.11.0",
+  "binding": "ai-sdk",
+  "enabled_actions": [
+    "orders.get",
+    "transactions.list",
+    "payments.createRefund",
+    "payments.getRefunds"
+  ],
+  "tools": [
+    "create_refund",
+    "get_order",
+    "get_refund",
+    "list_transactions"
+  ],
+  "note": "The toolkit has no tool for authorize, capture-authorization or void, so SwapSafe calls those REST endpoints directly."
+}
