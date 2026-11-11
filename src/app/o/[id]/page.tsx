@@ -30,6 +30,7 @@ export default function ShopperOrder({ params }: { params: Promise<{ id: string 
             <article key={l.id} className="card" aria-label={`Swap for ${l.name}`}>
               <p><strong>{l.qty} × {l.name}</strong> is out of stock. You ordered it at {fmt(l.unitPriceCents)} each.</p>
               <SwapEvidence sub={s} />
+              {order.status === "HELD" && <p className="text-sm mt-2">Look at the label photo yourself before you accept. The reading is an aid, not a guarantee.</p>}
               {order.status === "HELD" ? (
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <button type="button" className={`btn ${s.status === "accepted" ? "btn-primary" : ""}`} aria-pressed={s.status === "accepted"} aria-disabled={!!busy} onClick={() => act("consent", { action: "consent", lineId: l.id, decision: "accepted", proposalHash: s.proposalHash })}>Accept this swap</button>

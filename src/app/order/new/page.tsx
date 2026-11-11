@@ -36,7 +36,7 @@ export default function NewOrder() {
         session.current = instance.createPayPalOneTimePaymentSession({
           onApprove: async () => {
             const c = created.current; if (!c) return;
-            const r = await fetch(`/api/orders/${c.id}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "authorize" }) });
+            const r = await fetch(`/api/orders/${c.id}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "authorize", token: c.shopperToken }) });
             if (!r.ok) { setError((await r.json()).message ?? "PayPal could not place the hold."); setPaying(false); return; }
             router.push(`/o/${c.id}?t=${c.shopperToken}`);
           },

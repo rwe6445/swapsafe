@@ -55,9 +55,13 @@ export function decideSubstitution(input: {
   }
   if (prefs.diet && !substitute.diets.includes(prefs.diet)) block("DIET_MISMATCH", `The shop's data does not list this item as ${prefs.diet}.`);
 
-  if (reading.source !== "none" && reading.productName) {
-    const a = words(reading.productName), b = words(`${substitute.brand} ${substitute.name}`);
-    if (![...a].some((w) => b.has(w))) note("LABEL_NAME_UNCONFIRMED", `Label reads "${reading.productName}", catalog says "${substitute.name}". Check the photo.`);
+  // Fail closed: the photo must be evidence for THIS product, and an allergy-sensitive swap needs a fully read label.
+  if (hasPhoto && reading.source !== "none") {
+    const a = words(reading.productName ?? ""), b = words(`${substitute.brand} ${substitute.name}`);
+    if (!reading.productName) block("LABEL_MISMATCH", "The reading could not tell which product the photo shows.");
+    else if (![...a].some((w) => b.has(w))) block("LABEL_MISMATCH", `The label reads "${reading.productName}", but the proposed substitute is "${substitute.name}". Photograph the right product.`);
+    if ((prefs.avoidAllergens.length > 0 || prefs.diet) && reading.notReadable.length > 0) block("LABEL_NOT_FULLY_READABLE", `Part of the label could not be read (${reading.notReadable.join("; ").slice(0, 160)}). With an allergy or diet rule on the order, an unclear label is not offered.`);
+    if (reading.agreed === false) note("READINGS_DISAGREE", "Two independent readings differed on the allergen statements. Every allergen either one reported is counted.");
   }
   if (reading.textAddressedToAi.length) note("INSTRUCTION_TEXT_IGNORED", "Text found in the photo was treated as data, not as an instruction.");
 

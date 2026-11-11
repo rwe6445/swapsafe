@@ -8,6 +8,11 @@ import { bySku, sameCategory } from "@/lib/catalog";
 import { MAX_PHOTO_BYTES, MAX_PHOTOS_PER_ORDER, rateLimit, sniffImage } from "@/lib/guard";
 import { fail } from "@/lib/http";
 import type { Order } from "@/lib/types";
+import { readShop, safeEqual, sameOrigin } from "@/lib/session";
+
+const SHOP_ONLY = new Set(["pick", "swap", "approve", "execute", "refund"]);
+const forbidden = (message: string) => Response.json({ error: "FORBIDDEN", message }, { status: 403 });
+const ownsShop = (req: Request, order: Order) => { const shop = readShop(req); return !!shop && !!order.shop && safeEqual(shop, order.shop); };
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -35,19 +40,26 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
     const { id } = await ctx.params; const token = new URL(req.url).searchParams.get("t");
     const cur = await getStore().getOrder(id);
     if (!cur) return Response.json({ error: "ORDER_NOT_FOUND", message: "No such order." }, { status: 404 });
-    if (token !== null && token !== cur.order.shopperToken) return Response.json({ error: "FORBIDDEN", message: "This link is not valid for this order." }, { status: 403 });
-    return Response.json(view(cur.order, token ? "shopper" : "shop"));
+    if (token !== null) return safeEqual(token, cur.order.shopperToken) ? Response.json(view(cur.order, "shopper")) : forbidden("This link is not valid for this order.");
+    if (!ownsShop(req, cur.order)) return forbidden("This order belongs to another visitor's demo shop.");
+    return Response.json(view(cur.order, "shop"));
   } catch (e) { return fail(e); }
 }
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const limited = rateLimit(req, "action", 40); if (limited) return limited;
+  if (!sameOrigin(req)) return Response.json({ error: "CROSS_ORIGIN", message: "This request did not come from the SwapSafe site." }, { status: 403 });
   try {
     const { id } = await ctx.params; const store = getStore();
     const isForm = (req.headers.get("content-type") ?? "").includes("multipart/form-data");
     const form = isForm ? await req.formData() : null;
     const body = (form ? Object.fromEntries([...form.entries()].filter(([, v]) => typeof v === "string")) : await req.json().catch(() => ({}))) as Record<string, string>;
-    const role: "shop" | "shopper" = body.token ? "shopper" : "shop";
+    // Who may do what: shop actions need the shop that created the order; shopper actions need the shopper's link.
+    const target = await store.getOrder(id);
+    if (!target) throw new ServiceError("ORDER_NOT_FOUND", "No such order.", 404);
+    const isShop = ownsShop(req, target.order), isShopper = !!body.token && safeEqual(body.token, target.order.shopperToken);
+    if (SHOP_ONLY.has(body.action) && !isShop) return forbidden("Only the shop that received this order can do that.");
+    if (body.action === "authorize" && !isShop && !isShopper) return forbidden("Only the shopper who started this order can place its hold.");
     let order: Order;
     switch (body.action) {
       case "authorize": ({ order } = await authorizeOrder(store, gateway, id)); break;
@@ -92,6 +104,6 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       case "refund": ({ order } = await refundIssue(store, gateway, id, body.issueId, body.by ?? "shop")); break;
       default: throw new ServiceError("UNKNOWN_ACTION", "Unknown action.");
     }
-    return Response.json(view(order, role));
+    return Response.json(view(order, SHOP_ONLY.has(body.action) || (isShop && !body.token) ? "shop" : "shopper"));
   } catch (e) { return fail(e); }
 }

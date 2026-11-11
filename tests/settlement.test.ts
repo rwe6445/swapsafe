@@ -8,7 +8,7 @@ import { line, order, prefs } from "./helpers";
 function withSwap(o: Order, lineId: string, sku: string, status: Substitution["status"]) {
   const l = o.lines.find((x) => x.id === lineId)!; l.status = "out_of_stock";
   const sub = bySku(sku)!; const photo = { id: "ph1", url: "/labels/x.svg", sha256: "abc" };
-  const decision = decideSubstitution({ original: bySku(l.sku)!, substitute: sub, prefs: prefs(), reading: { ...EMPTY_READING, source: "ai" }, hasPhoto: true });
+  const decision = decideSubstitution({ original: bySku(l.sku)!, substitute: sub, prefs: prefs(), reading: { ...EMPTY_READING, source: "ai", productName: `${sub.brand} ${sub.name}` }, hasPhoto: true });
   const ph = proposalHash(l, { sku, photo, chargeCentsPerUnit: decision.chargeCentsPerUnit });
   l.substitution = { id: "s1", sku, name: sub.name, size: sub.size, listPriceCents: sub.priceCents, photo, reading: { ...EMPTY_READING, source: "ai" }, decision, proposalHash: ph, status,
     consent: status === "accepted" || status === "declined" ? { decision: status, at: "t", proposalHash: ph } : undefined };

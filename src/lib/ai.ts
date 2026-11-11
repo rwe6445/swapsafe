@@ -39,18 +39,37 @@ export async function overDailyCap(): Promise<boolean> {
   return n > cap;
 }
 
-/** Vision reading with honest fallbacks: a recorded reading for the bundled sample labels, otherwise "none". */
+const uniq = <T,>(xs: T[]) => [...new Set(xs)];
+/** Combine two readings so that neither can remove a warning: allergens are unioned, diet claims must appear in both. */
+export function combineReadings(a: LabelReading, b: LabelReading): LabelReading {
+  const key = (r: LabelReading) => [...r.allergensContains, "|", ...r.allergensMayContain].sort().join(",");
+  return {
+    ...a,
+    productName: a.productName ?? b.productName, sizeText: a.sizeText ?? b.sizeText,
+    allergensContains: uniq([...a.allergensContains, ...b.allergensContains]),
+    allergensMayContain: uniq([...a.allergensMayContain, ...b.allergensMayContain]),
+    dietClaims: a.dietClaims.filter((d) => b.dietClaims.includes(d)),
+    evidence: [...a.evidence, ...b.evidence.filter((e) => !a.evidence.some((x) => x.quote === e.quote))].slice(0, 12),
+    notReadable: uniq([...a.notReadable, ...b.notReadable]), textAddressedToAi: uniq([...a.textAddressedToAi, ...b.textAddressedToAi]),
+    readings: 2, agreed: key(a) === key(b),
+  };
+}
+
+/** Two independent vision readings, combined. Honest fallbacks: a recorded reading for the bundled sample labels, otherwise "none". */
 export async function readLabel(photo: { bytes: Uint8Array; mediaType: string; sha256: string }): Promise<LabelReading> {
   const fallback = () => cachedFor(photo.sha256) ?? EMPTY_READING;
   if (!aiConfigured() || (await overDailyCap())) return fallback();
-  try {
+  const once = async () => {
     const { output } = await generateText({
       model: visionModel(), system: LABEL_INSTRUCTIONS, output: Output.object({ schema: readingSchema }), maxRetries: 1, abortSignal: AbortSignal.timeout(25_000),
       messages: [{ role: "user", content: [{ type: "text", text: "Read this product label." }, { type: "file", data: photo.bytes, mediaType: photo.mediaType }] }],
     });
     return sanitizeReading(output, "ai", modelId());
-  } catch (e) {
-    console.error("label reading failed", e instanceof Error ? e.message : e);
-    return fallback();
-  }
+  };
+  const results = await Promise.allSettled([once(), once()]);
+  const ok = results.filter((r): r is PromiseFulfilledResult<LabelReading> => r.status === "fulfilled").map((r) => r.value);
+  if (ok.length === 2) return combineReadings(ok[0], ok[1]);
+  if (ok.length === 1) return { ...ok[0], readings: 1 };
+  console.error("label reading failed", results.map((r) => (r.status === "rejected" ? String(r.reason?.message ?? r.reason).slice(0, 120) : "ok")).join(" | "));
+  return fallback();
 }

@@ -2,12 +2,13 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import type { Order, OrderLine, Prefs, Substitution } from "./types";
 import { ALLERGENS, DIETS } from "./types";
 import { bySku, SHOP_NAME } from "./catalog";
-import { fmt } from "./policy";
+import { fmt, toCents } from "./policy";
 import { assertExecutable, computeSettlement, LockError, proposalHash } from "./settlement";
 import { PayPalError, type PayPalGateway } from "./paypal";
 import { mutateOrder, type Store } from "./store";
 import { runSwapAgent } from "./agent";
 import { MAX_PHOTO_BYTES, MAX_SWAP_CHECKS_PER_ORDER, sniffImage } from "./guard";
+import { safeEqual } from "./session";
 
 export class ServiceError extends Error { constructor(public code: string, message: string, public http = 400) { super(message); } }
 const now = () => new Date().toISOString();
@@ -24,7 +25,7 @@ export function parsePrefs(raw: unknown): Prefs {
 }
 
 /** Step 1: build the basket from catalog prices (the browser never sends prices) and create an AUTHORIZE order. */
-export async function createOrder(store: Store, gw: PayPalGateway, input: { shopperName: string; prefs: unknown; items: { sku: string; qty: number }[] }) {
+export async function createOrder(store: Store, gw: PayPalGateway, input: { shopperName: string; prefs: unknown; items: { sku: string; qty: number }[] }, shop: string) {
   const items = (Array.isArray(input.items) ? input.items : []).slice(0, 20);
   const lines: OrderLine[] = items.flatMap((it, i) => {
     const p = bySku(String(it.sku)); const qty = Math.floor(Number(it.qty));
@@ -32,7 +33,7 @@ export async function createOrder(store: Store, gw: PayPalGateway, input: { shop
   });
   if (!lines.length) throw new ServiceError("EMPTY_BASKET", "Add at least one item to the basket.");
   const order: Order = {
-    id: `ss_${short()}`, createdAt: now(), shopName: SHOP_NAME, shopperName: String(input.shopperName || "Sandbox shopper").slice(0, 60), shopperToken: randomBytes(16).toString("hex"),
+    id: `ss_${randomBytes(8).toString("hex")}`, createdAt: now(), shop, shopName: SHOP_NAME, shopperName: String(input.shopperName || "Sandbox shopper").slice(0, 60), shopperToken: randomBytes(16).toString("hex"),
     prefs: parsePrefs(input.prefs), lines, status: "DRAFT", currency: "USD", paypal: { refunds: [] }, approvals: [], timeline: [], ledger: [], issues: [],
   };
   const totalCents = lines.reduce((a, l) => a + l.qty * l.unitPriceCents, 0);
@@ -97,7 +98,7 @@ export async function proposeSwap(store: Store, id: string, lineId: string, subs
 /** Step 4: the shopper answers each swap. The answer is bound to the exact proposal by its hash. */
 export async function recordConsent(store: Store, id: string, token: string, lineId: string, decision: "accepted" | "declined", seenProposalHash: string) {
   return mutateOrder(store, id, (o) => {
-    if (token !== o.shopperToken) throw new ServiceError("FORBIDDEN", "This link cannot answer for the shopper.", 403);
+    if (!safeEqual(token, o.shopperToken)) throw new ServiceError("FORBIDDEN", "This link cannot answer for the shopper.", 403);
     mustHeld(o); const s = mustLine(o, lineId).substitution;
     if (!s || s.status === "blocked") throw new ServiceError("NO_PROPOSAL", "There is no open swap on this line.", 409);
     // The answer counts only for the proposal the shopper was looking at.
@@ -178,7 +179,7 @@ export async function executeSettlement(store: Store, gw: PayPalGateway, id: str
 /** After delivery: the shopper reports a problem with one charged line. The amount is that line's charge, set by code. */
 export async function reportIssue(store: Store, id: string, token: string, lineId: string, noteText: string) {
   return mutateOrder(store, id, (o) => {
-    if (token !== o.shopperToken) throw new ServiceError("FORBIDDEN", "This link cannot report for the shopper.", 403);
+    if (!safeEqual(token, o.shopperToken)) throw new ServiceError("FORBIDDEN", "This link cannot report for the shopper.", 403);
     if (o.status !== "SETTLED") throw new ServiceError("NOT_SETTLED", "Only a captured order can be refunded.", 409);
     const charged = computeSettlementSnapshot(o).find((l) => l.lineId === lineId);
     if (!charged || charged.chargeCents <= 0) throw new ServiceError("NOT_CHARGED", "That line was not charged.", 409);
@@ -216,14 +217,20 @@ export async function refundIssue(store: Store, gw: PayPalGateway, id: string, i
 }
 
 /** Webhook: attach the verification result to the order it belongs to. Unverified events never change state. */
-export async function applyWebhook(store: Store, ev: { id: string; event_type: string; resource?: { id?: string; supplementary_data?: { related_ids?: { order_id?: string; authorization_id?: string; capture_id?: string } } } }, verified: "SUCCESS" | "FAILURE") {
+export async function applyWebhook(store: Store, ev: { id: string; event_type: string; resource?: { id?: string; amount?: { value?: string }; supplementary_data?: { related_ids?: { order_id?: string; authorization_id?: string; capture_id?: string } } } }, verified: "SUCCESS" | "FAILURE") {
   const resourceId = ev.resource?.id ?? "";
   const rel = ev.resource?.supplementary_data?.related_ids ?? {};
   let orderId: string | null = null;
   for (const pid of [resourceId, rel.authorization_id, rel.capture_id, rel.order_id]) { if (pid && (orderId = await store.findByPayPalId(pid))) break; }
   if (verified !== "SUCCESS") return { fresh: false, orderId: null }; // only events PayPal vouched for are stored
   const fresh = await store.recordWebhook({ id: ev.id, eventType: ev.event_type, resourceId, verified, at: now(), orderId: orderId ?? undefined });
-  if (fresh && orderId) await mutateOrder(store, orderId, (o) => { ledger(o, `WEBHOOK ${ev.event_type}`, { paypalId: resourceId, verified, detail: `event ${ev.id}` }); });
+  if (fresh && orderId) await mutateOrder(store, orderId, (o) => {
+    // Reconcile PayPal's own figure with the ledger when both are known.
+    const theirs = ev.resource?.amount?.value ? toCents(ev.resource.amount.value) : null;
+    const ours = ev.event_type === "PAYMENT.CAPTURE.COMPLETED" ? o.paypal.capturedCents : ev.event_type === "PAYMENT.AUTHORIZATION.CREATED" ? o.paypal.authorizedCents : ev.event_type === "PAYMENT.CAPTURE.REFUNDED" ? o.paypal.refunds.find((r) => r.id === resourceId)?.cents : undefined;
+    const check = theirs == null || ours == null ? "" : theirs === ours ? ` · PayPal amount ${fmt(theirs)} matches the ledger` : ` · AMOUNT MISMATCH: PayPal says ${fmt(theirs)}, ledger says ${fmt(ours)}`;
+    ledger(o, `WEBHOOK ${ev.event_type}`, { paypalId: resourceId, verified, detail: `event ${ev.id}${check}` });
+  });
   return { fresh, orderId };
 }
 

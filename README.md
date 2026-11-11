@@ -1,6 +1,6 @@
 # SwapSafe — grocery swaps the shopper agrees to, paid only for what was packed
 
-Small grocers who pack online orders by hand run into the same problem every day: an item is out of stock after the customer has paid. The shop either charges for something the customer did not choose, or refunds and loses the sale, and a wrong substitute can be unsafe for someone with an allergy. SwapSafe holds the basket with a PayPal authorization instead of charging it, has a vision model read the label of each proposed substitute, lets deterministic code apply the shopper's allergy and diet rules and set the price, asks the shopper line by line, and then captures only the final amount. PayPal releases the rest of the hold.
+Small grocers who pack online orders by hand run into the same problem every day: an item is out of stock after the customer has paid. The shop either charges for something the customer did not choose, or refunds and loses the sale, and a wrong substitute can be unsafe for someone with an allergy. In a Which? survey of 3,552 UK shoppers, one in five had a substitution in their most recent online grocery order ([Which?](https://www.which.co.uk/policy-and-insight/article/unknown-item-in-bagging-area-which-reveals-britains-strangest-supermarket-substitutions-ae3rI0I23ZWc)), and FARE estimates that about 33 million people in the United States have at least one food allergy ([FARE](https://www.foodallergy.org/resources/facts-and-statistics)). SwapSafe holds the basket with a PayPal authorization instead of charging it, has a vision model read the label of each proposed substitute, lets deterministic code apply the shopper's allergy and diet rules and set the price, asks the shopper line by line, and then captures only the final amount. PayPal releases the rest of the hold.
 
 **[Live demo](https://swapsafe.vercel.app)** · License: MIT · PayPal sandbox only
 
@@ -69,7 +69,7 @@ The Agent Toolkit has no authorize, capture-authorization or void tool in 1.11.0
 ## AI usage
 
 - **Model**: Google Gemini (`gemini-3.5-flash-lite` by default, set by `AI_MODEL`) through the Vercel AI SDK (`ai` 7, `@ai-sdk/google`).
-- **Label reading** (`src/lib/ai.ts`): one image in, a schema-checked object out. The schema has evidence quotes first and no amount or verdict field.
+- **Label reading** (`src/lib/ai.ts`): one image in, a schema-checked object out, done twice and combined so that neither reading can remove a warning. The schema has evidence quotes first and no amount or verdict field.
 - **Swap assistant** (`src/lib/agent.ts`): a tool loop with `get_order`, `inspect_label`, `check_rules`, and `execute_settlement`. The last one is declared with `needsApproval` and returns a refusal if it is ever executed; settlement runs only from the shop's approval endpoint. The stored reading and decision are always produced by server code, whatever the model says or skips.
 - **Where the AI is not allowed to act**: it cannot set an amount, cannot remove an allergen the shop declared, cannot grant a diet claim the shop's data lacks, and cannot capture, void or refund.
 - **When the model is unavailable** (no key, daily cap, error): bundled sample labels fall back to a reading recorded on 2026-11-11 with the same model (`src/lib/cached-readings.json`, written by `scripts/record-readings.ts`) and the screen says "Cached AI result". Any other photo has no reading, and a swap without a reading is blocked.
@@ -77,12 +77,17 @@ The Agent Toolkit has no authorize, capture-authorization or void tool in 1.11.0
 ## Safety rails
 
 - **Evidence required**: no label photo or no reading means the swap cannot be offered (`NO_LABEL_EVIDENCE`).
+- **Fails closed**: a photo of a different product (`LABEL_MISMATCH`), or a partly unreadable label on an order with an allergy or diet rule (`LABEL_NOT_FULLY_READABLE`), blocks the swap.
+- **Two independent readings**: every label photo is read twice; allergens from either reading count, and a diet claim counts only if both saw it.
 - **The model can add caution, never remove it**: allergens are the union of the shop's data and the label reading.
 - **Deterministic amounts**: the charge is `min(substitute price, ordered price)` per unit; the total can never exceed the authorization.
 - **Double lock**: SDK tool approval on the model side, and on the server side `assertExecutable()` checks a recorded shop approval against a hash of the settlement as computed at execution time. A changed line or amount cancels the approval. Refused attempts are written to the ledger.
 - **Consent bound to the proposal**: the shopper's answer carries the hash of the proposal they were looking at. If the substitute, the quantity, the price or the photo changed, the answer is rejected.
 - **No change while PayPal is being called**: an order in settlement accepts no picks, swaps or answers until PayPal has replied.
 - **Image prompt injection**: text inside a photo is reported as data; unit tests show it changes neither the amount nor an allergen block.
+- **A private demo shop per visitor**: a signed, HttpOnly, SameSite cookie ties each browser to its own shop. Shop screens and shop actions (pick, propose, approve, capture, refund) work only for the shop that received the order; the shopper's page works only with the shopper's link; state-changing requests must be same-origin. One visitor cannot see or settle another visitor's orders.
+- **Reconciliation**: when a verified webhook carries an amount, it is compared with the ledger and a mismatch is flagged on the order.
+- **Browser policy**: Content-Security-Policy limits scripts, frames and connections to this site and PayPal; `frame-ancestors 'none'`; no camera, microphone or location permission.
 - **Public demo hardening**: sandbox-only guard at the PayPal client, per-IP rate limits, a daily cap on model calls, image type checked from file bytes, 2 MB and 8 uploaded photos per order, 12 swap checks per order, photos re-encoded in the browser (which drops EXIF), webhooks that PayPal does not verify are not stored.
 
 ## Judging guide
@@ -108,7 +113,7 @@ Environment variables are listed in `.env.example`. Without `DATABASE_URL` the a
 ## Tests
 
 ```bash
-npm test          # 32 unit tests: substitution rules, image prompt injection, settlement, double lock, order flow, races and interrupted calls
+npm test          # 38 unit tests: substitution rules, two-reading merge, image prompt injection, settlement, double lock, order flow, races and interrupted calls, shop isolation
 npm run typecheck
 npm run build
 ```
@@ -120,14 +125,14 @@ The order-flow tests use a test double for PayPal that reproduces `PayPal-Reques
 ## Known limitations
 
 - Sandbox only. No live money has moved.
-- The demo shop has no login. The shop screen links to the shopper's page so one person can play both roles; a real deployment needs accounts and the link would be sent to the shopper.
+- The demo has no accounts: a browser cookie stands in for the shop's login, and the shop screen links to the shopper's page so one person can play both roles. A real deployment needs staff accounts, and the link would be sent to the shopper by message.
 - One fictional shop and a 15-item catalog. Allergen data in the catalog is invented for the demo.
 - A label reading is only as good as the photo. Unreadable parts are listed, and the shopper sees the photo, but SwapSafe is not a medical device and does not replace reading the label.
 - A swap is never charged above the ordered item's price, so the shop absorbs the difference on a dearer substitute.
 - Authorizations are honored for 3 days and expire after 29; reauthorization is not implemented.
 - The per-minute rate limit is kept in memory per server instance; the daily budget for label checks per visitor is kept in the database.
 - A verified webhook that arrives before the order record knows its PayPal id is stored but not attached to the order.
-- No Content-Security-Policy header yet; the app renders no user-supplied HTML.
+- The Content-Security-Policy still allows inline scripts, which Next.js needs for hydration without per-request nonces.
 - `npm audit` reports advisories in packages that `@paypal/agent-toolkit` 1.11.0 depends on (its LangChain, OpenAI, mathjs and AI SDK 4 bindings). SwapSafe loads only the toolkit's `ai-sdk` entry and calls three tools from server code; the affected packages are not updated by a compatible version of the toolkit yet.
 
 ## Built during the hackathon

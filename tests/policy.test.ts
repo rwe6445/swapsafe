@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { decideSubstitution, EMPTY_READING, sanitizeReading } from "@/lib/policy";
+import { combineReadings } from "@/lib/ai";
 import { bySku } from "@/lib/catalog";
 import type { LabelReading } from "@/lib/types";
 import { prefs } from "./helpers";
@@ -38,9 +39,28 @@ describe("substitution rules", () => {
     expect(decideSubstitution({ original: oat, substitute: pesto, prefs: prefs(), reading: read(), hasPhoto: true }).reasons.map((r) => r.code)).toContain("DIFFERENT_CATEGORY");
     expect(decideSubstitution({ original: oat, substitute: soy, prefs: prefs({ allowSubstitutions: false }), reading: read(), hasPhoto: true }).verdict).toBe("blocked");
   });
+  it("R7 fails closed when the photo is of another product or the reading names none", () => {
+    const wrong = decideSubstitution({ original: oat, substitute: soy, prefs: prefs(), reading: read({ productName: "Brightfield Peanut Crunch Granola" }), hasPhoto: true });
+    expect(wrong.verdict).toBe("blocked"); expect(wrong.reasons.map((r) => r.code)).toContain("LABEL_MISMATCH");
+    expect(decideSubstitution({ original: oat, substitute: soy, prefs: prefs(), reading: read({ productName: null }), hasPhoto: true }).verdict).toBe("blocked");
+  });
+  it("R8 fails closed on a partly unreadable label when the order has an allergy rule, and only then", () => {
+    const r = read({ productName: "Tidewell Soy Drink", notReadable: ["allergen line hidden by glare"] });
+    expect(decideSubstitution({ original: oat, substitute: soy, prefs: prefs({ avoidAllergens: ["milk"] }), reading: r, hasPhoto: true }).reasons.map((x) => x.code)).toContain("LABEL_NOT_FULLY_READABLE");
+    expect(decideSubstitution({ original: oat, substitute: soy, prefs: prefs(), reading: r, hasPhoto: true }).verdict).toBe("offer");
+  });
   it("R6 is deterministic", () => {
     const i = { original: oat, substitute: almond, prefs: prefs({ avoidAllergens: ["milk"] as const as never }), reading: read(), hasPhoto: true };
     expect(decideSubstitution(i)).toEqual(decideSubstitution(i));
+  });
+});
+
+describe("two readings", () => {
+  it("unions allergens, keeps only diet claims both saw, and reports disagreement", () => {
+    const a = read({ allergensContains: ["soy"], dietClaims: ["vegan", "vegetarian"] }), b = read({ allergensContains: ["soy"], allergensMayContain: ["peanuts"], dietClaims: ["vegetarian"] });
+    const c = combineReadings(a, b);
+    expect(c.allergensMayContain).toEqual(["peanuts"]); expect(c.dietClaims).toEqual(["vegetarian"]); expect(c.agreed).toBe(false); expect(c.readings).toBe(2);
+    expect(combineReadings(a, a).agreed).toBe(true);
   });
 });
 

@@ -27,7 +27,7 @@ describe("order flow against a fake gateway (no AI key: rules pipeline)", () => 
   let f: ReturnType<typeof fakeGateway>; let id: string; let token: string;
   beforeEach(async () => {
     delete process.env.GOOGLE_GENERATIVE_AI_API_KEY; f = fakeGateway();
-    const c = await createOrder(store, f.gw, { shopperName: "Sam", prefs: { avoidAllergens: ["peanuts"] }, items: [{ sku: "pasta-penne-500", qty: 2 }, { sku: "oat-milk-1l", qty: 1 }, { sku: "nope", qty: 1 }] });
+    const c = await createOrder(store, f.gw, { shopperName: "Sam", prefs: { avoidAllergens: ["peanuts"] }, items: [{ sku: "pasta-penne-500", qty: 2 }, { sku: "oat-milk-1l", qty: 1 }, { sku: "nope", qty: 1 }] }, "shop-a");
     id = c.id; token = c.shopperToken; expect(c.totalCents).toBe(2 * 189 + 399);
     await authorizeOrder(store, f.gw, id);
   });

@@ -83,7 +83,7 @@ export function SwapEvidence({ sub }: { sub: NonNullable<Order["lines"][number][
       {sub.photo ? <img src={sub.photo.url} alt={`Label photo of ${sub.name}`} className="w-40 rounded-lg border border-line" /> : <div className="w-40 h-40 grid place-items-center rounded-lg border border-dashed border-line text-sm text-muted text-center p-2">No label photo</div>}
       <div className="text-sm space-y-2">
         <p><strong>{sub.name}</strong>, {sub.size}. Shelf price {fmt(sub.listPriceCents)}. <strong>Charge if accepted: {fmt(sub.decision.chargeCentsPerUnit)} each.</strong></p>
-        <p className="text-muted">{r.source === "ai" ? `Label read by ${r.model ?? "the vision model"}.` : r.source === "cached" ? "Cached AI result: a reading recorded earlier for this sample label." : "No label reading is available."}</p>
+        <p className="text-muted">{r.source === "ai" ? `Label read by ${r.model ?? "the vision model"}${r.readings === 2 ? `, twice and independently; the readings ${r.agreed ? "agreed" : "differed, so every warning from either one counts"}` : ""}.` : r.source === "cached" ? "Cached AI result: a reading recorded earlier for this sample label." : "No label reading is available."}</p>
         {r.evidence.length > 0 && <ul className="list-disc pl-5">{r.evidence.slice(0, 6).map((e, i) => <li key={i}>{claimLabel(e.claim)}: <q>{e.quote}</q></li>)}</ul>}
         {r.notReadable.length > 0 && <p>Could not read: {r.notReadable.join("; ")}</p>}
         {r.textAddressedToAi.length > 0 && <p className="card bg-wait-bg py-2">Text found in the photo was treated as data, not as an instruction: <q className="mono">{r.textAddressedToAi[0]}</q></p>}

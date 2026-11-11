@@ -16,7 +16,7 @@ export default function Shop() {
   }, []);
   return (
     <div className="space-y-8">
-      <div><h1>Marigold Corner Market: orders to pick</h1><p className="text-muted">Demo shop with no login, so one person can play both the shop and the shopper.</p></div>
+      <div><h1>Marigold Corner Market: orders to pick</h1><p className="text-muted">This is your own private demo shop: it shows only orders started in this browser, and only this browser can pick, settle or refund them.</p></div>
       {error && <p role="alert" className="card bg-stop-bg text-stop">{error}</p>}
       <section className="card" aria-labelledby="orders">
         <h2 id="orders" className="mb-2">Orders</h2>

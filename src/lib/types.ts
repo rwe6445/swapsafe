@@ -23,11 +23,14 @@ export interface LabelReading {
   notReadable: string[];
   /** Text in the photo that reads like an instruction. Shown to people as data, never acted on. */
   textAddressedToAi: string[];
+  /** How many independent readings were combined, and whether they agreed on the allergen statements. */
+  readings?: number;
+  agreed?: boolean;
 }
 
 export type ReasonCode =
   | "NO_LABEL_EVIDENCE" | "ALLERGEN_CONFLICT" | "DIET_MISMATCH" | "DIFFERENT_CATEGORY" | "SHOPPER_OPTED_OUT"
-  | "LABEL_NAME_UNCONFIRMED" | "PRICE_MATCHED_DOWN" | "PRICE_LOWER" | "INSTRUCTION_TEXT_IGNORED";
+  | "LABEL_MISMATCH" | "LABEL_NOT_FULLY_READABLE" | "READINGS_DISAGREE" | "PRICE_MATCHED_DOWN" | "PRICE_LOWER" | "INSTRUCTION_TEXT_IGNORED";
 
 export interface SubDecision {
   verdict: "offer" | "blocked";
@@ -61,7 +64,7 @@ export interface LedgerEvent {
 }
 
 export interface Order {
-  id: string; createdAt: string; shopName: string; shopperName: string; shopperToken: string; prefs: Prefs;
+  id: string; createdAt: string; shop?: string; shopName: string; shopperName: string; shopperToken: string; prefs: Prefs;
   lines: OrderLine[]; status: OrderStatus; currency: "USD";
   paypal: {
     orderId?: string; authorizationId?: string; authorizedCents?: number; authExpiresAt?: string;
