@@ -1,0 +1,219 @@
+{
+  "recorded_at_utc": "2026-11-11T06:46:33Z",
+  "environment": "PayPal sandbox",
+  "step": "e2e_1_get_order",
+  "request": {
+    "method": "GET",
+    "url": "https://api-m.sandbox.paypal.com/v2/checkout/orders/59R22196RB783940M",
+    "headers": {},
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "paypal_debug_id": "f359040844b32",
+    "body": {
+      "id": "59R22196RB783940M",
+      "intent": "AUTHORIZE",
+      "status": "COMPLETED",
+      "payment_source": {
+        "paypal": {
+          "email_address": "sb-df47oc53855971@personal.example.com",
+          "account_id": "KWWLHEZYXM8JG",
+          "account_status": "VERIFIED",
+          "name": {
+            "given_name": "John",
+            "surname": "Doe"
+          },
+          "address": {
+            "country_code": "US"
+          }
+        }
+      },
+      "purchase_units": [
+        {
+          "reference_id": "ss_203bc1eae3",
+          "amount": {
+            "currency_code": "USD",
+            "value": "19.75",
+            "breakdown": {
+              "item_total": {
+                "currency_code": "USD",
+                "value": "19.75"
+              }
+            }
+          },
+          "payee": {
+            "email_address": "sb-lo7nz53787734@business.example.com",
+            "merchant_id": "XKUVWQZR4484Y"
+          },
+          "description": "Grocery basket, held until picked",
+          "custom_id": "ss_203bc1eae3",
+          "items": [
+            {
+              "name": "Oat Drink Original",
+              "unit_amount": {
+                "currency_code": "USD",
+                "value": "3.99"
+              },
+              "quantity": "2",
+              "category": "PHYSICAL_GOODS"
+            },
+            {
+              "name": "Oat & Honey Granola",
+              "unit_amount": {
+                "currency_code": "USD",
+                "value": "5.49"
+              },
+              "quantity": "1",
+              "category": "PHYSICAL_GOODS"
+            },
+            {
+              "name": "Gluten-Free Penne (corn & rice)",
+              "unit_amount": {
+                "currency_code": "USD",
+                "value": "3.29"
+              },
+              "quantity": "1",
+              "category": "PHYSICAL_GOODS"
+            },
+            {
+              "name": "Tomato & Basil Sauce",
+              "unit_amount": {
+                "currency_code": "USD",
+                "value": "2.99"
+              },
+              "quantity": "1",
+              "category": "PHYSICAL_GOODS"
+            }
+          ],
+          "shipping": {
+            "name": {
+              "full_name": "John Doe"
+            },
+            "address": {
+              "address_line_1": "2211 N First St",
+              "admin_area_2": "San Jose",
+              "admin_area_1": "CA",
+              "postal_code": "95131",
+              "country_code": "US"
+            }
+          },
+          "payments": {
+            "authorizations": [
+              {
+                "status": "CAPTURED",
+                "id": "2MN116735H959040E",
+                "amount": {
+                  "currency_code": "USD",
+                  "value": "19.75"
+                },
+                "custom_id": "ss_203bc1eae3",
+                "seller_protection": {
+                  "status": "ELIGIBLE",
+                  "dispute_categories": [
+                    "ITEM_NOT_RECEIVED",
+                    "UNAUTHORIZED_TRANSACTION"
+                  ]
+                },
+                "expiration_time": "2026-12-10T06:46:00Z",
+                "create_time": "2026-11-11T06:46:00Z",
+                "update_time": "2026-11-11T06:46:04Z"
+              }
+            ],
+            "captures": [
+              {
+                "id": "4836170538001751A",
+                "status": "PARTIALLY_REFUNDED",
+                "amount": {
+                  "currency_code": "USD",
+                  "value": "11.77"
+                },
+                "final_capture": true,
+                "disbursement_mode": "INSTANT",
+                "seller_protection": {
+                  "status": "ELIGIBLE",
+                  "dispute_categories": [
+                    "ITEM_NOT_RECEIVED",
+                    "UNAUTHORIZED_TRANSACTION"
+                  ]
+                },
+                "seller_receivable_breakdown": {
+                  "gross_amount": {
+                    "currency_code": "USD",
+                    "value": "11.77"
+                  },
+                  "paypal_fee": {
+                    "currency_code": "USD",
+                    "value": "0.90"
+                  },
+                  "net_amount": {
+                    "currency_code": "USD",
+                    "value": "10.87"
+                  }
+                },
+                "invoice_id": "ss_203bc1eae3",
+                "custom_id": "ss_203bc1eae3",
+                "create_time": "2026-11-11T06:46:04Z",
+                "update_time": "2026-11-11T06:46:08Z"
+              }
+            ],
+            "refunds": [
+              {
+                "id": "08G127432S200722L",
+                "amount": {
+                  "currency_code": "USD",
+                  "value": "2.99"
+                },
+                "note_to_payer": "SwapSafe refund: jar arrived cracked",
+                "seller_payable_breakdown": {
+                  "gross_amount": {
+                    "currency_code": "USD",
+                    "value": "2.99"
+                  },
+                  "paypal_fee": {
+                    "currency_code": "USD",
+                    "value": "0.00"
+                  },
+                  "platform_fees": [
+                    {
+                      "amount": {
+                        "currency_code": "USD",
+                        "value": "0.00"
+                      }
+                    }
+                  ],
+                  "net_amount": {
+                    "currency_code": "USD",
+                    "value": "2.99"
+                  },
+                  "total_refunded_amount": {
+                    "currency_code": "USD",
+                    "value": "2.99"
+                  }
+                },
+                "invoice_id": "ss_203bc1eae3",
+                "custom_id": "ss_203bc1eae3",
+                "status": "COMPLETED",
+                "create_time": "2026-11-10T22:46:08-08:00",
+                "update_time": "2026-11-10T22:46:08-08:00"
+              }
+            ]
+          }
+        }
+      ],
+      "payer": {
+        "name": {
+          "given_name": "John",
+          "surname": "Doe"
+        },
+        "email_address": "sb-df47oc53855971@personal.example.com",
+        "payer_id": "KWWLHEZYXM8JG",
+        "address": {
+          "country_code": "US"
+        }
+      },
+      "create_time": "2026-11-11T06:46:00Z",
+      "update_time": "2026-11-11T06:46:04Z"
+    }
+  }
+}

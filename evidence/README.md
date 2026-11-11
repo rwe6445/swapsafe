@@ -5,6 +5,8 @@ Request and response records from real calls to the PayPal sandbox (`api-m.sandb
 | File | What it shows |
 |---|---|
 | `wallet_1_create_order_authorize.json` | `POST /v2/checkout/orders` with `intent: AUTHORIZE` for the PayPal wallet flow; PayPal answers `PAYER_ACTION_REQUIRED` |
+| `wallet_2_authorize_after_buyer_approval.json`, `wallet_3_partial_capture_final.json`, `wallet_4_get_authorization_after_capture.json` | The same wallet order after a sandbox buyer approved it in a browser: authorization `CREATED` for 19.75 USD, final capture of 11.77 USD, authorization `CAPTURED` |
+| `app_e2e_1_get_order.json` to `app_e2e_4_get_refund.json` | PayPal's own records of one order driven through the SwapSafe screens by `e2e/flow.mjs` (JS SDK v6 approval popup, pick list, approval, capture of 11.77 of 19.75 USD, refund of 2.99 USD through the Agent Toolkit) |
 | `card_1_create_order_authorize_card.json` | An AUTHORIZE order paid with a sandbox test card: authorization `CREATED` for 19.75 USD |
 | `card_2_partial_capture_final.json` | `POST /v2/payments/authorizations/{id}/capture` for 11.77 USD with `final_capture: true`: `COMPLETED` |
 | `card_2b_same_request_id_retry.json` | The same call repeated with the same `PayPal-Request-Id`: PayPal returns the same capture id, no second capture |
@@ -15,4 +17,4 @@ Request and response records from real calls to the PayPal sandbox (`api-m.sandb
 | `toolkit_tools.json` | The toolkit tools SwapSafe enables |
 | `voidcard_1_create_order_authorize_card.json`, `voidcard_2_void.json`, `voidcard_3_get_authorization_after_void.json` | An authorization of 7.98 USD released with `POST /v2/payments/authorizations/{id}/void`: `VOIDED` |
 
-The card runs were used to exercise the Payments v2 calls without a browser. Buyer approval through the JS SDK v6 and webhook signature verification are recorded separately once they have run on the hosted deployment.
+The card runs were used to exercise the Payments v2 calls without a browser. The `app_e2e_*` run used a local build of the app with the in-memory store. Webhook signature verification needs a public HTTPS URL and is recorded once it has run on the hosted deployment.

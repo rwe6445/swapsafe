@@ -109,6 +109,8 @@ npm run build
 
 The order-flow tests use a test double for PayPal that reproduces `PayPal-Request-Id` idempotency. They do not call PayPal.
 
+`e2e/flow.mjs` drives the real screens against the real sandbox with Playwright (buyer approval in the JS SDK v6 popup, picking, approval, capture, report, refund). It needs `BASE_URL`, `SANDBOX_BUYER_EMAIL` and `SANDBOX_BUYER_PASSWORD`. Records from one run are in `evidence/`.
+
 ## Known limitations
 
 - Sandbox only. No live money has moved.

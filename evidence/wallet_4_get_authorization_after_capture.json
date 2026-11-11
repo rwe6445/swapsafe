@@ -1,0 +1,42 @@
+{
+  "recorded_at_utc": "2026-11-11T06:44:48Z",
+  "environment": "PayPal sandbox",
+  "step": "4_get_authorization_after_capture",
+  "request": {
+    "method": "GET",
+    "url": "https://api-m.sandbox.paypal.com/v2/payments/authorizations/577021018T003323U",
+    "headers": {},
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "paypal_debug_id": "f545335335a96",
+    "body": {
+      "id": "577021018T003323U",
+      "status": "CAPTURED",
+      "amount": {
+        "currency_code": "USD",
+        "value": "19.75"
+      },
+      "seller_protection": {
+        "status": "ELIGIBLE",
+        "dispute_categories": [
+          "ITEM_NOT_RECEIVED",
+          "UNAUTHORIZED_TRANSACTION"
+        ]
+      },
+      "supplementary_data": {
+        "related_ids": {
+          "order_id": "1SL5888413659793H"
+        }
+      },
+      "payee": {
+        "email_address": "sb-lo7nz53787734@business.example.com",
+        "merchant_id": "XKUVWQZR4484Y"
+      },
+      "expiration_time": "2026-12-10T06:44:45Z",
+      "create_time": "2026-11-11T06:44:45Z",
+      "update_time": "2026-11-11T06:44:47Z"
+    }
+  }
+}

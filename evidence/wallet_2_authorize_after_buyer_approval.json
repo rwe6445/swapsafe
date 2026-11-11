@@ -1,0 +1,85 @@
+{
+  "recorded_at_utc": "2026-11-11T06:44:46Z",
+  "environment": "PayPal sandbox",
+  "step": "2_authorize_after_buyer_approval",
+  "request": {
+    "method": "POST",
+    "url": "https://api-m.sandbox.paypal.com/v2/checkout/orders/1SL5888413659793H/authorize",
+    "headers": {
+      "PayPal-Request-Id": "spike-wauth-1794379484"
+    },
+    "body": {}
+  },
+  "response": {
+    "status": 201,
+    "paypal_debug_id": "f64688538603f",
+    "body": {
+      "id": "1SL5888413659793H",
+      "intent": "AUTHORIZE",
+      "status": "COMPLETED",
+      "payment_source": {
+        "paypal": {
+          "email_address": "sb-df47oc53855971@personal.example.com",
+          "account_id": "KWWLHEZYXM8JG",
+          "account_status": "VERIFIED",
+          "name": {
+            "given_name": "John",
+            "surname": "Doe"
+          },
+          "address": {
+            "country_code": "US"
+          }
+        }
+      },
+      "purchase_units": [
+        {
+          "reference_id": "spike-capture",
+          "amount": {
+            "currency_code": "USD",
+            "value": "19.75"
+          },
+          "payee": {
+            "email_address": "sb-lo7nz53787734@business.example.com",
+            "merchant_id": "XKUVWQZR4484Y"
+          },
+          "description": "Grocery basket, held until picked",
+          "payments": {
+            "authorizations": [
+              {
+                "status": "CREATED",
+                "id": "577021018T003323U",
+                "amount": {
+                  "currency_code": "USD",
+                  "value": "19.75"
+                },
+                "seller_protection": {
+                  "status": "ELIGIBLE",
+                  "dispute_categories": [
+                    "ITEM_NOT_RECEIVED",
+                    "UNAUTHORIZED_TRANSACTION"
+                  ]
+                },
+                "expiration_time": "2026-12-10T06:44:45Z",
+                "create_time": "2026-11-11T06:44:45Z",
+                "update_time": "2026-11-11T06:44:45Z"
+              }
+            ]
+          }
+        }
+      ],
+      "payer": {
+        "name": {
+          "given_name": "John",
+          "surname": "Doe"
+        },
+        "email_address": "sb-df47oc53855971@personal.example.com",
+        "payer_id": "KWWLHEZYXM8JG",
+        "address": {
+          "country_code": "US"
+        }
+      },
+      "create_time": "2026-11-11T06:38:45Z",
+      "update_time": "2026-11-11T06:44:45Z"
+    }
+  }
+}

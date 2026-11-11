@@ -1,0 +1,50 @@
+{
+  "recorded_at_utc": "2026-11-11T06:46:36Z",
+  "environment": "PayPal sandbox",
+  "step": "e2e_4_get_refund",
+  "request": {
+    "method": "GET",
+    "url": "https://api-m.sandbox.paypal.com/v2/payments/refunds/08G127432S200722L",
+    "headers": {},
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "paypal_debug_id": "f660002707b2f",
+    "body": {
+      "id": "08G127432S200722L",
+      "amount": {
+        "currency_code": "USD",
+        "value": "2.99"
+      },
+      "note_to_payer": "SwapSafe refund: jar arrived cracked",
+      "seller_payable_breakdown": {
+        "gross_amount": {
+          "currency_code": "USD",
+          "value": "2.99"
+        },
+        "paypal_fee": {
+          "currency_code": "USD",
+          "value": "0.00"
+        },
+        "net_amount": {
+          "currency_code": "USD",
+          "value": "2.99"
+        },
+        "total_refunded_amount": {
+          "currency_code": "USD",
+          "value": "2.99"
+        }
+      },
+      "invoice_id": "ss_203bc1eae3",
+      "custom_id": "ss_203bc1eae3",
+      "status": "COMPLETED",
+      "create_time": "2026-11-10T22:46:08-08:00",
+      "update_time": "2026-11-10T22:46:08-08:00",
+      "payer": {
+        "email_address": "sb-lo7nz53787734@business.example.com",
+        "merchant_id": "XKUVWQZR4484Y"
+      }
+    }
+  }
+}

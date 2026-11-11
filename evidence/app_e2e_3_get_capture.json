@@ -1,0 +1,60 @@
+{
+  "recorded_at_utc": "2026-11-11T06:46:35Z",
+  "environment": "PayPal sandbox",
+  "step": "e2e_3_get_capture",
+  "request": {
+    "method": "GET",
+    "url": "https://api-m.sandbox.paypal.com/v2/payments/captures/4836170538001751A",
+    "headers": {},
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "paypal_debug_id": "f4585090109e4",
+    "body": {
+      "id": "4836170538001751A",
+      "amount": {
+        "currency_code": "USD",
+        "value": "11.77"
+      },
+      "final_capture": true,
+      "seller_protection": {
+        "status": "ELIGIBLE",
+        "dispute_categories": [
+          "ITEM_NOT_RECEIVED",
+          "UNAUTHORIZED_TRANSACTION"
+        ]
+      },
+      "disbursement_mode": "INSTANT",
+      "seller_receivable_breakdown": {
+        "gross_amount": {
+          "currency_code": "USD",
+          "value": "11.77"
+        },
+        "paypal_fee": {
+          "currency_code": "USD",
+          "value": "0.90"
+        },
+        "net_amount": {
+          "currency_code": "USD",
+          "value": "10.87"
+        }
+      },
+      "invoice_id": "ss_203bc1eae3",
+      "custom_id": "ss_203bc1eae3",
+      "status": "PARTIALLY_REFUNDED",
+      "supplementary_data": {
+        "related_ids": {
+          "order_id": "59R22196RB783940M",
+          "authorization_id": "2MN116735H959040E"
+        }
+      },
+      "payee": {
+        "email_address": "sb-lo7nz53787734@business.example.com",
+        "merchant_id": "XKUVWQZR4484Y"
+      },
+      "create_time": "2026-11-11T06:46:04Z",
+      "update_time": "2026-11-11T06:46:08Z"
+    }
+  }
+}
