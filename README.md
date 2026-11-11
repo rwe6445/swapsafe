@@ -2,9 +2,9 @@
 
 Small grocers who pack online orders by hand run into the same problem every day: an item is out of stock after the customer has paid. The shop either charges for something the customer did not choose, or refunds and loses the sale, and a wrong substitute can be unsafe for someone with an allergy. In a Which? survey of 3,552 UK shoppers, one in five had a substitution in their most recent online grocery order ([Which?](https://www.which.co.uk/policy-and-insight/article/unknown-item-in-bagging-area-which-reveals-britains-strangest-supermarket-substitutions-ae3rI0I23ZWc)), and FARE estimates that about 33 million people in the United States have at least one food allergy ([FARE](https://www.foodallergy.org/resources/facts-and-statistics)). SwapSafe holds the basket with a PayPal authorization instead of charging it, has a vision model read the label of each proposed substitute, lets deterministic code apply the shopper's allergy and diet rules and set the price, asks the shopper line by line, and then captures only the final amount. PayPal releases the rest of the hold.
 
-**[Live demo](https://swapsafe.vercel.app)** · License: MIT · PayPal sandbox only
+**[Live demo](https://swapsafe.vercel.app)** · **[Demo video (2:17)](https://youtu.be/nBWIhEr_lkg)** · License: MIT · PayPal sandbox only
 
-> Status on 2026-11-11: the hosted demo runs the full flow against the PayPal sandbox, and the records of those runs are in `evidence/`. The demo video is added here when it is published.
+> Status on 2026-11-11: the hosted demo runs the full flow against the PayPal sandbox, and the records of those runs are in `evidence/`. The demo video was recorded on the hosted demo with `e2e/demo.mjs`; every payment in it is a real sandbox transaction.
 
 ## Try it in 60 seconds
 
@@ -98,7 +98,7 @@ The Agent Toolkit has no authorize, capture-authorization or void tool in 1.11.0
 | Design | Four screens on the live demo: basket, picking, shopper's swap page, receipt | https://swapsafe.vercel.app |
 | Potential Impact | Small grocers that pack by hand, and shoppers with allergies | First paragraph of this file |
 | Innovation | A label photo as evidence, rules that only let the model add caution, one final capture for the agreed amount | [`evidence/app_e2e_swap_run.json`](evidence/app_e2e_swap_run.json) (assistant timeline) |
-| Presentation | This README and the demo video | [`evidence/README.md`](evidence/README.md) lists every record |
+| Presentation | This README and the [demo video](https://youtu.be/nBWIhEr_lkg) | [`evidence/README.md`](evidence/README.md) lists every record |
 
 ## Run locally
 
