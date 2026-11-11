@@ -1,0 +1,161 @@
+{
+  "recorded_at_utc": "2026-11-11T07:06:30Z",
+  "environment": "PayPal sandbox, hosted deployment https://swapsafe.vercel.app (Neon Postgres, gemini-3.5-flash-lite)",
+  "driver": "e2e/flow.mjs --swap (Playwright, headless Chromium)",
+  "how_verified": "Each event PayPal delivered to /api/webhooks/paypal was checked with POST /v1/notifications/verify-webhook-signature on the raw body. These are real events from sandbox transactions, not simulator events.",
+  "webhook_events": [
+    {
+      "event_id": "WH-9UG02014WH1607454-59R85600YK4168403",
+      "event_type": "PAYMENT.AUTHORIZATION.CREATED",
+      "resource_id": "21X77484XR379403J",
+      "verification_status": "SUCCESS",
+      "received_at": "2026-11-11T07:05:41.615Z",
+      "order": "ss_9f0f832836"
+    },
+    {
+      "event_id": "WH-41690751NF721191P-2G172330L0607412S",
+      "event_type": "PAYMENT.CAPTURE.COMPLETED",
+      "resource_id": "51821002A85651601",
+      "verification_status": "SUCCESS",
+      "received_at": "2026-11-11T07:05:26.035Z",
+      "order": "ss_9f0f832836"
+    },
+    {
+      "event_id": "WH-6JA91510SG558045X-19C50840FX8887318",
+      "event_type": "PAYMENT.CAPTURE.REFUNDED",
+      "resource_id": "0HF83989S0285074E",
+      "verification_status": "SUCCESS",
+      "received_at": "2026-11-11T07:05:25.380Z",
+      "order": "ss_9f0f832836"
+    }
+  ],
+  "order": {
+    "id": "ss_9f0f832836",
+    "status": "SETTLED",
+    "paypal": {
+      "orderId": "1K4074550P818644K",
+      "refunds": [
+        {
+          "at": "2026-11-11T07:05:14.382Z",
+          "id": "0HF83989S0285074E",
+          "cents": 299,
+          "reason": "jar arrived cracked"
+        }
+      ],
+      "captureId": "51821002A85651601",
+      "authExpiresAt": "2026-12-10T07:04:55Z",
+      "capturedCents": 1975,
+      "authorizationId": "21X77484XR379403J",
+      "authorizedCents": 1975
+    },
+    "ledger": [
+      {
+        "at": "2026-11-11T07:04:42.863Z",
+        "type": "ORDER_CREATED (intent AUTHORIZE)",
+        "paypalId": "1K4074550P818644K",
+        "debugId": "f98961695ab79",
+        "amountCents": 1975,
+        "verified": "n/a",
+        "detail": null
+      },
+      {
+        "at": "2026-11-11T07:04:56.405Z",
+        "type": "AUTHORIZATION_CREATED (hold placed, nothing charged)",
+        "paypalId": "21X77484XR379403J",
+        "debugId": "ca58b72120fb2",
+        "amountCents": 1975,
+        "verified": "n/a",
+        "detail": null
+      },
+      {
+        "at": "2026-11-11T07:05:10.703Z",
+        "type": "CAPTURE (final_capture=true, remainder released)",
+        "paypalId": "51821002A85651601",
+        "debugId": "f4836750a944b",
+        "amountCents": 1975,
+        "verified": "n/a",
+        "detail": "released $0.00"
+      },
+      {
+        "at": "2026-11-11T07:05:14.382Z",
+        "type": "REFUND (via agent-toolkit)",
+        "paypalId": "0HF83989S0285074E",
+        "debugId": null,
+        "amountCents": 299,
+        "verified": "n/a",
+        "detail": null
+      },
+      {
+        "at": "2026-11-11T07:05:25.391Z",
+        "type": "WEBHOOK PAYMENT.CAPTURE.REFUNDED",
+        "paypalId": "0HF83989S0285074E",
+        "debugId": null,
+        "amountCents": null,
+        "verified": "SUCCESS",
+        "detail": "event WH-6JA91510SG558045X-19C50840FX8887318"
+      },
+      {
+        "at": "2026-11-11T07:05:26.043Z",
+        "type": "WEBHOOK PAYMENT.CAPTURE.COMPLETED",
+        "paypalId": "51821002A85651601",
+        "debugId": null,
+        "amountCents": null,
+        "verified": "SUCCESS",
+        "detail": "event WH-41690751NF721191P-2G172330L0607412S"
+      },
+      {
+        "at": "2026-11-11T07:05:41.623Z",
+        "type": "WEBHOOK PAYMENT.AUTHORIZATION.CREATED",
+        "paypalId": "21X77484XR379403J",
+        "debugId": null,
+        "amountCents": null,
+        "verified": "SUCCESS",
+        "detail": "event WH-9UG02014WH1607454-59R85600YK4168403"
+      }
+    ],
+    "assistant_timeline": [
+      {
+        "tool": "swap",
+        "kind": "note",
+        "output": "agent: The picker proposed Fernhill Almond Drink Unsweetened as a substitute for your Oat Drink Original. The label confirms it is an almond-based plant drink containing tree nuts and is suitable for vegans. The substitution rule allows this offer, matching the charge to your original item's price of $3.99 per unit.",
+        "ms": 0
+      },
+      {
+        "tool": "get_order",
+        "kind": "tool",
+        "output": "Oat Drink Original -> Fernhill Almond Drink Unsweetened",
+        "ms": 0
+      },
+      {
+        "tool": "inspect_label",
+        "kind": "tool",
+        "output": "AI reading: \"FERNHILL Almond Drink Unsweetened\", contains [tree_nuts], may contain [none stated]",
+        "ms": 1425
+      },
+      {
+        "tool": "check_rules",
+        "kind": "tool",
+        "output": "offer at $3.99 per unit; PRICE_MATCHED_DOWN",
+        "ms": 1
+      },
+      {
+        "tool": "shopper_consent",
+        "kind": "approval",
+        "output": "accepted; bound to proposal 5a61e6553a",
+        "ms": 0
+      },
+      {
+        "tool": "shop_approval",
+        "kind": "approval",
+        "output": "approved by shop owner (demo); settlement 5c497b4909",
+        "ms": 0
+      },
+      {
+        "tool": "shop_approval",
+        "kind": "approval",
+        "output": "approved by shop owner (demo) for report is_b52612db40",
+        "ms": 0
+      }
+    ]
+  }
+}

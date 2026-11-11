@@ -2,13 +2,15 @@
 
 Small grocers who pack online orders by hand run into the same problem every day: an item is out of stock after the customer has paid. The shop either charges for something the customer did not choose, or refunds and loses the sale, and a wrong substitute can be unsafe for someone with an allergy. SwapSafe holds the basket with a PayPal authorization instead of charging it, has a vision model read the label of each proposed substitute, lets deterministic code apply the shopper's allergy and diet rules and set the price, asks the shopper line by line, and then captures only the final amount. PayPal releases the rest of the hold.
 
-License: MIT · PayPal sandbox only
+**[Live demo](https://swapsafe.vercel.app)** · License: MIT · PayPal sandbox only
 
-> Status on 2026-11-11: the code, unit tests and build in this repository run. Sandbox records are in `evidence/`. Still to be added as they are produced: the hosted demo link, the webhook verification record from the hosted deployment, and the video.
+> Status on 2026-11-11: the hosted demo runs the full flow against the PayPal sandbox, and the records of those runs are in `evidence/`. The demo video is added here when it is published.
 
 ## Try it in 60 seconds
 
-1. Open **Shopper: start a basket**, press **Fill a sample basket**, and approve the hold with a PayPal sandbox buyer account.
+Open https://swapsafe.vercel.app. When the PayPal window asks you to log in, use a PayPal sandbox personal (buyer) account.
+
+1. Open **Shopper: start a basket**, press **Fill a sample basket**, and approve the hold in the PayPal window.
 2. Open **Shop: pick orders**, open the order, mark lines **Picked** or **Out of stock**.
 3. For an out-of-stock line choose a substitute and press **Use the sample label image** (or photograph a real label).
 4. Open the shopper's page (linked at the bottom of the shop screen), accept or decline each swap.
@@ -81,13 +83,13 @@ The Agent Toolkit has no authorize, capture-authorization or void tool in 1.11.0
 
 ## Judging guide
 
-| Criterion | Where to look |
-|---|---|
-| Technological Implementation | `src/lib/paypal.ts` (REST client, webhook verification), `src/lib/settlement.ts` (lock), `tests/` |
-| Design | Four screens: basket, picking, shopper's swap page, receipt |
-| Potential Impact | Small grocers that pack by hand and shoppers with allergies; the first paragraph of this file |
-| Innovation | A label photo as evidence, rules that only let the model add caution, and a hold that is settled once for the agreed amount |
-| Presentation | This README and the demo video |
+| Criterion | Where to see it | Evidence |
+|---|---|---|
+| Technological Implementation | `src/lib/paypal.ts` (REST client, webhook registration and verification), `src/lib/settlement.ts` (lock), `src/lib/agent.ts`, `tests/` | [`evidence/webhook_verify_hosted_e2e.json`](evidence/webhook_verify_hosted_e2e.json) (three real webhooks, `verification_status: SUCCESS`), [`evidence/card_2b_same_request_id_retry.json`](evidence/card_2b_same_request_id_retry.json) (idempotent retry), [`evidence/card_4_second_capture_refused.json`](evidence/card_4_second_capture_refused.json) |
+| Design | Four screens on the live demo: basket, picking, shopper's swap page, receipt | https://swapsafe.vercel.app |
+| Potential Impact | Small grocers that pack by hand, and shoppers with allergies | First paragraph of this file |
+| Innovation | A label photo as evidence, rules that only let the model add caution, one final capture for the agreed amount | [`evidence/app_e2e_swap_run.json`](evidence/app_e2e_swap_run.json) (assistant timeline) |
+| Presentation | This README and the demo video | [`evidence/README.md`](evidence/README.md) lists every record |
 
 ## Run locally
 
