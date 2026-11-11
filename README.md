@@ -4,7 +4,7 @@ Small grocers who pack online orders by hand run into the same problem every day
 
 License: MIT · PayPal sandbox only
 
-> Status on 2026-11-11: the code, unit tests and build in this repository run. Still to be added as they are produced: sandbox transaction evidence in `evidence/`, the hosted demo link, the video, and the recorded readings for the sample labels (`src/lib/cached-readings.json` is empty until a model key has been used once). Nothing below claims a sandbox run that is not in `evidence/`.
+> Status on 2026-11-11: the code, unit tests and build in this repository run. Sandbox records are in `evidence/`. Still to be added as they are produced: the hosted demo link, the webhook verification record from the hosted deployment, and the video.
 
 ## Try it in 60 seconds
 
@@ -63,11 +63,11 @@ The Agent Toolkit has no authorize, capture-authorization or void tool in 1.11.0
 
 ## AI usage
 
-- **Model**: Google Gemini through the Vercel AI SDK (`ai` 7, `@ai-sdk/google`). The model id is set by `AI_MODEL`.
+- **Model**: Google Gemini (`gemini-3.5-flash-lite` by default, set by `AI_MODEL`) through the Vercel AI SDK (`ai` 7, `@ai-sdk/google`).
 - **Label reading** (`src/lib/ai.ts`): one image in, a schema-checked object out. The schema has evidence quotes first and no amount or verdict field.
-- **Swap assistant** (`src/lib/agent.ts`): a tool loop with `get_order`, `inspect_label`, `check_rules`, and `execute_settlement`. The last one is declared with `needsApproval`, so the SDK stops instead of running it. The stored reading and decision are always produced by server code, whatever the model says or skips.
+- **Swap assistant** (`src/lib/agent.ts`): a tool loop with `get_order`, `inspect_label`, `check_rules`, and `execute_settlement`. The last one is declared with `needsApproval` and returns a refusal if it is ever executed; settlement runs only from the shop's approval endpoint. The stored reading and decision are always produced by server code, whatever the model says or skips.
 - **Where the AI is not allowed to act**: it cannot set an amount, cannot remove an allergen the shop declared, cannot grant a diet claim the shop's data lacks, and cannot capture, void or refund.
-- **When the model is unavailable** (no key, daily cap, error): bundled sample labels fall back to a reading recorded earlier and the screen says "Cached AI result". Any other photo has no reading, and a swap without a reading is blocked.
+- **When the model is unavailable** (no key, daily cap, error): bundled sample labels fall back to a reading recorded on 2026-11-11 with the same model (`src/lib/cached-readings.json`, written by `scripts/record-readings.ts`) and the screen says "Cached AI result". Any other photo has no reading, and a swap without a reading is blocked.
 
 ## Safety rails
 

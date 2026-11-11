@@ -7,7 +7,7 @@ import { getStore } from "./store";
 import cached from "./cached-readings.json";
 
 export const aiConfigured = () => !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-export const modelId = () => process.env.AI_MODEL || "gemini-2.5-flash";
+export const modelId = () => process.env.AI_MODEL || "gemini-3.5-flash-lite";
 export const visionModel = () => createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY })(modelId());
 
 /** Evidence first, and no amount or verdict anywhere in the schema. */
@@ -46,7 +46,7 @@ export async function readLabel(photo: { bytes: Uint8Array; mediaType: string; s
   try {
     const { output } = await generateText({
       model: visionModel(), system: LABEL_INSTRUCTIONS, output: Output.object({ schema: readingSchema }), maxRetries: 1, abortSignal: AbortSignal.timeout(25_000),
-      messages: [{ role: "user", content: [{ type: "text", text: "Read this product label." }, { type: "image", image: photo.bytes, mediaType: photo.mediaType }] }],
+      messages: [{ role: "user", content: [{ type: "text", text: "Read this product label." }, { type: "file", data: photo.bytes, mediaType: photo.mediaType }] }],
     });
     return sanitizeReading(output, "ai", modelId());
   } catch (e) {

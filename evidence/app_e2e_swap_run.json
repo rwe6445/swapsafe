@@ -1,0 +1,14 @@
+{
+  "recorded_at_utc": "2026-11-11T06:54:00Z",
+  "environment": "PayPal sandbox, local production build of SwapSafe, in-memory store, model gemini-3.5-flash-lite",
+  "driver": "e2e/flow.mjs --swap (Playwright, headless Chromium)",
+  "steps": ["checkout ready (JS SDK v6 loaded)", "buyer approved in the sdk-v6 PayPal popup, hold placed", "oat drink marked out of stock, almond drink proposed with the sample label image", "swap offered at 3.99 USD per unit (PRICE_MATCHED_DOWN)", "shopper accepted the swap", "shop approved, capture 19.75 USD, release 0.00 USD", "shopper reported a line, refund 2.99 USD through the Agent Toolkit"],
+  "paypal": { "order_id": "9JM812503T616422W", "authorization_id": "11G65422XJ638540T", "capture_id": "7MX554011D4830313", "refund_id": "4SW52680XK908962G" },
+  "assistant_timeline": [
+    { "tool": "get_order", "output": "Oat Drink Original -> Fernhill Almond Drink Unsweetened" },
+    { "tool": "inspect_label", "output": "AI reading: \"FERNHILL Almond Drink Unsweetened\", contains [tree_nuts], may contain [none stated]", "ms": 1307 },
+    { "tool": "check_rules", "output": "offer at $3.99 per unit; PRICE_MATCHED_DOWN" },
+    { "tool": "shopper_consent", "output": "accepted; bound to proposal 5a61e6553a" },
+    { "tool": "shop_approval", "output": "settlement c2092e7614" }
+  ]
+}
