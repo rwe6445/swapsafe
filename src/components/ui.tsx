@@ -61,6 +61,10 @@ export function Ledger({ order }: { order: Pick<Order, "ledger"> }) {
   );
 }
 
+const CLAIM_LABELS: [RegExp, string][] = [[/^product\s*name/i, "Product name"], [/^size/i, "Size"], [/^allergens?\s*may\s*contain/i, "May contain"], [/^allergens?\s*contains?/i, "Contains"], [/^diet/i, "Diet claim"]];
+/** The model names its claims after schema fields; show them in plain words. */
+const claimLabel = (claim: string) => { const rest = claim.includes(":") ? claim.slice(claim.indexOf(":") + 1).trim().replace(/_/g, " ") : ""; const hit = CLAIM_LABELS.find(([rx]) => rx.test(claim)); return hit ? (rest ? `${hit[1]} (${rest})` : hit[1]) : claim; };
+
 export function SwapEvidence({ sub }: { sub: NonNullable<Order["lines"][number]["substitution"]> }) {
   const r = sub.reading;
   return (
@@ -69,7 +73,7 @@ export function SwapEvidence({ sub }: { sub: NonNullable<Order["lines"][number][
       <div className="text-sm space-y-2">
         <p><strong>{sub.name}</strong>, {sub.size}. Shelf price {fmt(sub.listPriceCents)}. <strong>Charge if accepted: {fmt(sub.decision.chargeCentsPerUnit)} each.</strong></p>
         <p className="text-muted">{r.source === "ai" ? `Label read by ${r.model ?? "the vision model"}.` : r.source === "cached" ? "Cached AI result: a reading recorded earlier for this sample label." : "No label reading is available."}</p>
-        {r.evidence.length > 0 && <ul className="list-disc pl-5">{r.evidence.slice(0, 6).map((e, i) => <li key={i}>{e.claim}: <q>{e.quote}</q></li>)}</ul>}
+        {r.evidence.length > 0 && <ul className="list-disc pl-5">{r.evidence.slice(0, 6).map((e, i) => <li key={i}>{claimLabel(e.claim)}: <q>{e.quote}</q></li>)}</ul>}
         {r.notReadable.length > 0 && <p>Could not read: {r.notReadable.join("; ")}</p>}
         {r.textAddressedToAi.length > 0 && <p className="card bg-wait-bg py-2">Text found in the photo was treated as data, not as an instruction: <q className="mono">{r.textAddressedToAi[0]}</q></p>}
         <ul className="space-y-1">{sub.decision.reasons.map((x, i) => <li key={i}><Pill tone={x.blocking ? "stop" : "plain"}>{x.blocking ? "Rule blocks" : "Rule note"}</Pill> {x.detail}</li>)}</ul>
