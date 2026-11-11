@@ -121,7 +121,7 @@ export async function ensureWebhook(): Promise<string | null> {
   return knownWebhookId;
 }
 
-export async function verifyWebhook(headers: Headers, rawBody: string): Promise<{ status: "SUCCESS" | "FAILURE"; debugId?: string }> {
+export async function verifyWebhook(headers: Headers, rawBody: string): Promise<{ status: "SUCCESS" | "FAILURE" | "ERROR"; debugId?: string }> {
   const webhookId = await ensureWebhook();
   const h = (k: string) => headers.get(k) ?? "";
   if (!webhookId || !h("paypal-transmission-id")) return { status: "FAILURE" };
@@ -133,5 +133,5 @@ export async function verifyWebhook(headers: Headers, rawBody: string): Promise<
   try {
     const r = await call<{ verification_status: string }>("POST", "/v1/notifications/verify-webhook-signature", undefined, undefined, body);
     return { status: r.data.verification_status === "SUCCESS" ? "SUCCESS" : "FAILURE", debugId: r.debugId };
-  } catch { return { status: "FAILURE" }; }
+  } catch { return { status: "ERROR" }; } // could not ask PayPal: the caller answers 503 so PayPal delivers the event again
 }

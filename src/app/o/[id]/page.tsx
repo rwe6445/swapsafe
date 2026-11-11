@@ -1,12 +1,13 @@
 "use client";
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ErrorNote, fmt, Ledger, Pill, statusText, statusTone, SwapEvidence, useOrder } from "@/components/ui";
 
 export default function ShopperOrder({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const token = useSearchParams().get("t") ?? "";
-  const { view, error, busy, act } = useOrder(id, token);
+  const { view, error, notice, busy, act } = useOrder(id, token);
+  useEffect(() => { document.title = `Your order ${id} · SwapSafe`; }, [id]);
   const [notes, setNotes] = useState<Record<string, string>>({});
   if (!view) return <><p role="status" className="text-muted">Loading your order…</p><ErrorNote message={error} /></>;
   const { order, settlement } = view;
@@ -19,7 +20,7 @@ export default function ShopperOrder({ params }: { params: Promise<{ id: string 
         <div><h1>{settled ? "Your receipt" : "Your order"}</h1><p className="text-muted">{order.shopName} · order <span className="mono">{order.id}</span></p></div>
         <Pill tone={statusTone(order.status)}>{statusText(order.status)}</Pill>
       </div>
-      <ErrorNote message={error} />
+      <ErrorNote message={error} notice={notice} />
       {order.status === "HELD" && <p className="card bg-wait-bg">PayPal is holding {fmt(order.paypal.authorizedCents ?? 0)}. Nothing has been charged. This page updates as the shop picks your order.</p>}
 
       {swaps.length > 0 && (
@@ -31,8 +32,8 @@ export default function ShopperOrder({ params }: { params: Promise<{ id: string 
               <SwapEvidence sub={s} />
               {order.status === "HELD" ? (
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <button type="button" className={`btn ${s.status === "accepted" ? "btn-primary" : ""}`} aria-pressed={s.status === "accepted"} disabled={!!busy} onClick={() => act("consent", { action: "consent", lineId: l.id, decision: "accepted" })}>Accept this swap</button>
-                  <button type="button" className={`btn ${s.status === "declined" ? "btn-danger" : ""}`} aria-pressed={s.status === "declined"} disabled={!!busy} onClick={() => act("consent", { action: "consent", lineId: l.id, decision: "declined" })}>No thanks, remove the item</button>
+                  <button type="button" className={`btn ${s.status === "accepted" ? "btn-primary" : ""}`} aria-pressed={s.status === "accepted"} aria-disabled={!!busy} onClick={() => act("consent", { action: "consent", lineId: l.id, decision: "accepted", proposalHash: s.proposalHash })}>Accept this swap</button>
+                  <button type="button" className={`btn ${s.status === "declined" ? "btn-danger" : ""}`} aria-pressed={s.status === "declined"} aria-disabled={!!busy} onClick={() => act("consent", { action: "consent", lineId: l.id, decision: "declined", proposalHash: s.proposalHash })}>No thanks, remove the item</button>
                   <span className="text-sm text-muted">{s.status === "proposed" ? "Waiting for your answer." : `You ${s.status} this swap. You can change it until the shop finishes.`}</span>
                 </div>
               ) : <p className="mt-2"><Pill tone={s.status === "accepted" ? "ok" : "plain"}>{s.status === "accepted" ? "You accepted" : "You declined: not charged"}</Pill></p>}
@@ -48,8 +49,8 @@ export default function ShopperOrder({ params }: { params: Promise<{ id: string 
               {order.status === "SETTLED" && <td>{s.chargeCents === 0 ? "" : issue ? <Pill tone={issue.status === "refunded" ? "ok" : "wait"}>{issue.status === "refunded" ? `refunded ${fmt(issue.cents)}` : "reported, waiting for the shop"}</Pill> : (
                 <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); act("report", { action: "report", lineId: s.lineId, note: notes[s.lineId] || "item arrived damaged" }); }}>
                   <label className="sr-only" htmlFor={`note-${s.lineId}`}>What went wrong with {s.label}</label>
-                  <input id={`note-${s.lineId}`} className="border border-line rounded-lg px-2 py-1 bg-white w-44" placeholder="What went wrong?" maxLength={300} value={notes[s.lineId] ?? ""} onChange={(e) => setNotes((n) => ({ ...n, [s.lineId]: e.target.value }))} />
-                  <button className="btn" disabled={!!busy}>Report</button></form>)}</td>}
+                  <input id={`note-${s.lineId}`} className="field !w-44 !py-1" placeholder="What went wrong?" maxLength={300} value={notes[s.lineId] ?? ""} onChange={(e) => setNotes((n) => ({ ...n, [s.lineId]: e.target.value }))} />
+                  <button className="btn" aria-disabled={!!busy}>Report</button></form>)}</td>}
             </tr>); })}</tbody></table></div>
         <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
           <dt>Held by PayPal</dt><dd className="font-bold">{fmt(settlement.authorizedCents)}</dd>

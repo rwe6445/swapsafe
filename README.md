@@ -62,7 +62,7 @@ flowchart LR
 | Nothing fulfilled | `POST /v2/payments/authorizations/{id}/void` | same |
 | Refund a reported line | PayPal Agent Toolkit 1.11.0 `create_refund`, called by server code after the shop approves; plain REST `captures/{id}/refund` is the fallback and the ledger records which one ran | `src/lib/toolkit.ts` |
 | Webhooks | The deployment registers a webhook for its own URL (`/v1/notifications/webhooks`) and checks every event with `POST /v1/notifications/verify-webhook-signature` on the raw body; the result is stored with the event and shown on the order | `src/lib/paypal.ts`, `src/app/api/webhooks/paypal/route.ts` |
-| Idempotency | One `PayPal-Request-Id` per order step (`ss-settle-<order>`, `ss-refund-<report>`), so a retry cannot capture or refund twice | `src/lib/service.ts` |
+| Idempotency | Settlement and refunds run in three steps: claim the order, make one PayPal call with a `PayPal-Request-Id` (`ss-settle-<order>-<amount>`, `ss-refund-<report>`), record the answer. An interrupted call is resumed with the same key. The Agent Toolkit call carries the same key through `context.request_id` | `src/lib/service.ts`, `src/lib/toolkit.ts` |
 
 The Agent Toolkit has no authorize, capture-authorization or void tool in 1.11.0, so those calls are hand-written REST.
 
@@ -80,9 +80,10 @@ The Agent Toolkit has no authorize, capture-authorization or void tool in 1.11.0
 - **The model can add caution, never remove it**: allergens are the union of the shop's data and the label reading.
 - **Deterministic amounts**: the charge is `min(substitute price, ordered price)` per unit; the total can never exceed the authorization.
 - **Double lock**: SDK tool approval on the model side, and on the server side `assertExecutable()` checks a recorded shop approval against a hash of the settlement as computed at execution time. A changed line or amount cancels the approval. Refused attempts are written to the ledger.
-- **Consent bound to the proposal**: if the substitute, the quantity, the price or the photo changes after the shopper agreed, the consent no longer matches.
+- **Consent bound to the proposal**: the shopper's answer carries the hash of the proposal they were looking at. If the substitute, the quantity, the price or the photo changed, the answer is rejected.
+- **No change while PayPal is being called**: an order in settlement accepts no picks, swaps or answers until PayPal has replied.
 - **Image prompt injection**: text inside a photo is reported as data; unit tests show it changes neither the amount nor an allergen block.
-- **Public demo hardening**: sandbox-only guard at the PayPal client, per-IP rate limits, a daily cap on model calls, image type checked from file bytes, 5 MB upload limit, photos re-encoded in the browser (which drops EXIF), unverified webhooks never change state.
+- **Public demo hardening**: sandbox-only guard at the PayPal client, per-IP rate limits, a daily cap on model calls, image type checked from file bytes, 2 MB and 8 uploaded photos per order, 12 swap checks per order, photos re-encoded in the browser (which drops EXIF), webhooks that PayPal does not verify are not stored.
 
 ## Judging guide
 
@@ -107,7 +108,7 @@ Environment variables are listed in `.env.example`. Without `DATABASE_URL` the a
 ## Tests
 
 ```bash
-npm test          # 27 unit tests: substitution rules, image prompt injection, settlement, double lock, order flow with idempotency
+npm test          # 32 unit tests: substitution rules, image prompt injection, settlement, double lock, order flow, races and interrupted calls
 npm run typecheck
 npm run build
 ```
@@ -125,6 +126,7 @@ The order-flow tests use a test double for PayPal that reproduces `PayPal-Reques
 - A swap is never charged above the ordered item's price, so the shop absorbs the difference on a dearer substitute.
 - Authorizations are honored for 3 days and expire after 29; reauthorization is not implemented.
 - The per-IP rate limit is kept in memory per server instance.
+- `npm audit` reports advisories in packages that `@paypal/agent-toolkit` 1.11.0 depends on (its LangChain, OpenAI, mathjs and AI SDK 4 bindings). SwapSafe loads only the toolkit's `ai-sdk` entry and calls three tools from server code; the affected packages are not updated by a compatible version of the toolkit yet.
 
 ## Built during the hackathon
 

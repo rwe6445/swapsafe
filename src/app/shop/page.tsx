@@ -9,6 +9,7 @@ type Hook = { id: string; eventType: string; resourceId: string; verified: strin
 export default function Shop() {
   const [data, setData] = useState<{ orders: Row[]; webhooks: Hook[]; store: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  useEffect(() => { document.title = "Orders to pick · SwapSafe shop"; }, []);
   useEffect(() => {
     const load = () => fetch("/api/orders", { cache: "no-store" }).then(async (r) => { const j = await r.json(); if (r.ok) { setData(j); setError(null); } else setError(j.message); }).catch(() => setError("Network problem. Retrying."));
     load(); const t = setInterval(load, 6000); return () => clearInterval(t);

@@ -9,8 +9,10 @@ html { background: var(--color-paper); color: var(--color-ink); }
 body { font-family: var(--font-sans); line-height: 1.5; }
 :focus-visible { outline: 3px solid var(--color-leaf); outline-offset: 2px; border-radius: 4px; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 44px; padding: .55rem 1rem; border-radius: 8px; font-weight: 600; border: 1.5px solid var(--color-ink); background: var(--color-card); color: var(--color-ink); cursor: pointer; }
-.btn:hover:not(:disabled) { background: #efe9d8; }
-.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn:hover:not(:disabled):not([aria-disabled="true"]) { background: #efe9d8; }
+.btn:disabled, .btn[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
+.field { width: 100%; border: 1.5px solid #6b756e; border-radius: 8px; padding: .5rem .75rem; background: #fff; color: var(--color-ink); }
+::placeholder { color: #5f6963; opacity: 1; }
 .btn-primary { background: var(--color-leaf); border-color: var(--color-leaf); color: #fff; }
 .btn-primary:hover:not(:disabled) { background: var(--color-leaf-dark); }
 .btn-danger { border-color: var(--color-stop); color: var(--color-stop); }

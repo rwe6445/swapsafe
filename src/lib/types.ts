@@ -49,7 +49,7 @@ export interface OrderLine {
   substitution?: Substitution;
 }
 
-export type OrderStatus = "DRAFT" | "HELD" | "SETTLED" | "VOIDED";
+export type OrderStatus = "DRAFT" | "HELD" | "SETTLING" | "SETTLED" | "VOIDED";
 
 export interface AgentStep { at: string; tool: string; input: string; output: string; ms: number; kind: "tool" | "approval" | "note" }
 
@@ -68,7 +68,10 @@ export interface Order {
     captureId?: string; capturedCents?: number; voided?: boolean; refunds: { id: string; cents: number; reason: string; at: string }[];
   };
   approvals: Approval[]; timeline: AgentStep[]; ledger: LedgerEvent[];
-  issues: { id: string; lineId: string; note: string; cents: number; status: "open" | "refunded" | "rejected"; at: string }[];
+  issues: { id: string; lineId: string; note: string; cents: number; status: "open" | "refunding" | "refunded" | "rejected"; at: string }[];
+  /** Set while a settlement is in flight. The order accepts no other change until PayPal has answered. */
+  settling?: { approvalId: string; totalCents: number; releaseCents: number; action: "capture" | "void"; at: string };
+  photoCount?: number;
 }
 
 export interface SettlementLine { lineId: string; label: string; qty: number; chargeCents: number; basis: "picked" | "substituted" | "removed"; note: string }

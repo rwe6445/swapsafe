@@ -9,40 +9,43 @@ export function Pill({ tone, children }: { tone: "ok" | "wait" | "stop" | "plain
   const cls = { ok: "bg-ok-bg text-leaf-dark", wait: "bg-wait-bg text-ink", stop: "bg-stop-bg text-stop", plain: "bg-card text-muted" }[tone];
   return <span className={`pill ${cls}`}>{children}</span>;
 }
-export const statusTone = (s: string) => (s === "SETTLED" ? "ok" : s === "VOIDED" ? "plain" : s === "HELD" ? "wait" : "plain") as "ok" | "wait" | "plain";
-export const statusText = (s: string) => ({ DRAFT: "Waiting for PayPal approval", HELD: "On hold, nothing charged", SETTLED: "Captured", VOIDED: "Released, nothing charged" }[s] ?? s);
+export const statusTone = (s: string) => (s === "SETTLED" ? "ok" : s === "VOIDED" ? "plain" : s === "HELD" || s === "SETTLING" ? "wait" : "plain") as "ok" | "wait" | "plain";
+export const statusText = (s: string) => ({ DRAFT: "Waiting for PayPal approval", HELD: "On hold, nothing charged", SETTLING: "Settling with PayPal", SETTLED: "Captured", VOIDED: "Released, nothing charged" }[s] ?? s);
 
 /** Loads one order, polls while it is open, and posts actions. Errors are shown, not swallowed. */
 export function useOrder(id: string, token: string | null) {
   const [view, setView] = useState<ShopView | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
-  const alive = useRef(true);
+  const alive = useRef(true); const running = useRef(false);
   const load = useCallback(async () => {
     try {
       const r = await fetch(`/api/orders/${id}${token ? `?t=${encodeURIComponent(token)}` : ""}`, { cache: "no-store" });
       const j = await r.json();
       if (!alive.current) return;
-      if (!r.ok) setError(j.message ?? "Could not load the order."); else { setView(j); setError(null); }
-    } catch { if (alive.current) setError("Network problem. Retrying."); }
+      if (!r.ok) setLoadError(j.message ?? "Could not load the order."); else { if (!running.current) setView(j); setLoadError(null); }
+    } catch { if (alive.current) setLoadError("Network problem. Retrying."); }
   }, [id, token]);
   useEffect(() => { alive.current = true; load(); const t = setInterval(load, 5000); return () => { alive.current = false; clearInterval(t); }; }, [load]);
   const act = useCallback(async (label: string, body: Record<string, string> | FormData) => {
-    setBusy(label); setError(null);
+    if (running.current) return null; // buttons stay focusable while busy (aria-disabled), so guard re-entry here
+    running.current = true; setBusy(label); setError(null); setNotice("Working…");
     try {
       const isForm = body instanceof FormData;
       if (token) { if (isForm) body.set("token", token); else body.token = token; }
       const r = await fetch(`/api/orders/${id}`, { method: "POST", body: isForm ? body : JSON.stringify(body), headers: isForm ? undefined : { "Content-Type": "application/json" } });
       const j = await r.json();
-      if (!r.ok) { setError(j.message ?? "That did not work."); return null; }
-      setView(j); return j as ShopView;
-    } catch { setError("Network problem. Nothing was changed."); return null; } finally { setBusy(null); }
+      if (!r.ok) { setError(j.message ?? "That did not work."); setNotice(""); return null; }
+      setView(j); setNotice(`Done. Order status: ${statusText((j as ShopView).order.status)}.`); return j as ShopView;
+    } catch { setError("Network problem. Nothing was changed."); setNotice(""); return null; } finally { running.current = false; setBusy(null); }
   }, [id, token]);
-  return { view, error, busy, act, reload: load };
+  return { view, error: error ?? loadError, notice, busy, act, reload: load };
 }
 
-export function ErrorNote({ message }: { message: string | null }) {
-  return <div role="alert" aria-live="assertive">{message ? <p className="card border-stop text-stop bg-stop-bg my-3">{message}</p> : null}</div>;
+export function ErrorNote({ message, notice = "" }: { message: string | null; notice?: string }) {
+  return <><div role="alert" aria-live="assertive">{message ? <p className="card border-stop text-stop bg-stop-bg my-3">{message}</p> : null}</div><p role="status" className="sr-only">{notice}</p></>;
 }
 
 export function Ledger({ order }: { order: Pick<Order, "ledger"> }) {

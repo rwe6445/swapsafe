@@ -9,7 +9,9 @@ export function rateLimit(req: Request, bucket: string, perMinute: number): Resp
   return null;
 }
 
-export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+export const MAX_PHOTO_BYTES = 2 * 1024 * 1024;
+export const MAX_PHOTOS_PER_ORDER = 8;
+export const MAX_SWAP_CHECKS_PER_ORDER = 12;
 /** Check the real file type from its first bytes, not the name or the declared type. */
 export function sniffImage(bytes: Uint8Array): "image/jpeg" | "image/png" | "image/webp" | null {
   if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";

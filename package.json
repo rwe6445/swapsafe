@@ -16,7 +16,6 @@
     "@neondatabase/serverless": "1.2.0",
     "@paypal/agent-toolkit": "1.11.0",
     "@paypal/paypal-js": "11.3.0",
-    "@vercel/blob": "2.9.0",
     "ai": "7.0.169",
     "next": "16.4.6",
     "react": "19.3.1",

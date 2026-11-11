@@ -1,0 +1,45 @@
+{
+  "recorded_at_utc": "2026-11-11T07:24:00Z",
+  "environment": "PayPal sandbox, hosted deployment https://swapsafe.vercel.app",
+  "driver": "e2e/flow.mjs --void (Playwright)",
+  "what": "Every line marked out of stock; the shop approved; the server sent POST /v2/payments/authorizations/{id}/void; nothing was charged.",
+  "order": {
+    "orderId": "ss_c4a5aa58b1",
+    "status": "VOIDED",
+    "paypal": {
+      "voided": true,
+      "orderId": "2H714981DF1569715",
+      "refunds": [],
+      "authExpiresAt": "2026-12-10T07:20:35Z",
+      "capturedCents": 0,
+      "authorizationId": "4FB54357UW8627254",
+      "authorizedCents": 1975
+    },
+    "ledger": [
+      [
+        "ORDER_CREATED (intent AUTHORIZE)",
+        "2H714981DF1569715",
+        1975,
+        "n/a"
+      ],
+      [
+        "AUTHORIZATION_CREATED (hold placed, nothing charged)",
+        "4FB54357UW8627254",
+        1975,
+        "n/a"
+      ],
+      [
+        "VOID (nothing was charged)",
+        "4FB54357UW8627254",
+        0,
+        "n/a"
+      ],
+      [
+        "WEBHOOK PAYMENT.AUTHORIZATION.VOIDED",
+        "4FB54357UW8627254",
+        null,
+        "SUCCESS"
+      ]
+    ]
+  }
+}

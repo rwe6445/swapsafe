@@ -23,6 +23,7 @@ export default function NewOrder() {
   const created = useRef<{ id: string; shopperToken: string } | null>(null);
   const total = useMemo(() => CATALOG.reduce((a, p) => a + (qty[p.sku] ?? 0) * p.priceCents, 0), [qty]);
 
+  useEffect(() => { document.title = "Start a basket · SwapSafe"; }, []);
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -70,7 +71,7 @@ export default function NewOrder() {
                 <div><p className="font-semibold">{p.brand} {p.name}</p><p className="text-sm text-muted">{p.size} · {fmt(p.priceCents)}</p></div>
                 <div className="flex items-center gap-2">
                   <button type="button" className="btn px-3" aria-label={`One less ${p.name}`} disabled={!qty[p.sku]} onClick={() => setQty((q) => ({ ...q, [p.sku]: Math.max((q[p.sku] ?? 0) - 1, 0) }))}>−</button>
-                  <span className="w-6 text-center" aria-live="polite" aria-label={`${qty[p.sku] ?? 0} of ${p.name}`}>{qty[p.sku] ?? 0}</span>
+                  <span className="w-6 text-center"><span className="sr-only">{p.name} quantity: </span>{qty[p.sku] ?? 0}</span>
                   <button type="button" className="btn px-3" aria-label={`One more ${p.name}`} disabled={(qty[p.sku] ?? 0) >= 10} onClick={() => setQty((q) => ({ ...q, [p.sku]: (q[p.sku] ?? 0) + 1 }))}>+</button>
                 </div>
               </li>))}
@@ -80,13 +81,13 @@ export default function NewOrder() {
           <section className="card space-y-3" aria-labelledby="rules">
             <h2 id="rules">Your swap rules</h2>
             <label className="block text-sm font-semibold" htmlFor="name">Name on the order</label>
-            <input id="name" className="w-full border border-line rounded-lg px-3 py-2 bg-white" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder="Sandbox shopper" />
+            <input id="name" autoComplete="name" className="field" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder="Sandbox shopper" />
             <fieldset><legend className="text-sm font-semibold">Never give me anything that contains or may contain</legend>
               <div className="grid grid-cols-2 gap-x-3 mt-1">{ALLERGENS.map((a) => (
                 <label key={a} className="flex items-center gap-2 py-1 capitalize"><input type="checkbox" className="size-4" checked={avoid.includes(a)} onChange={(e) => setAvoid((v) => e.target.checked ? [...v, a] : v.filter((x) => x !== a))} />{label(a)}</label>))}</div>
             </fieldset>
             <label className="block text-sm font-semibold" htmlFor="diet">Diet</label>
-            <select id="diet" className="w-full border border-line rounded-lg px-3 py-2 bg-white" value={diet} onChange={(e) => setDiet(e.target.value as Diet | "")}><option value="">No restriction</option><option value="vegetarian">Vegetarian</option><option value="vegan">Vegan</option></select>
+            <select id="diet" className="field" value={diet} onChange={(e) => setDiet(e.target.value as Diet | "")}><option value="">No restriction</option><option value="vegetarian">Vegetarian</option><option value="vegan">Vegan</option></select>
             <label className="flex items-center gap-2"><input type="checkbox" className="size-4" checked={allowSubs} onChange={(e) => setAllowSubs(e.target.checked)} />Offer me swaps for out-of-stock items</label>
           </section>
           <section className="card space-y-3" aria-labelledby="pay">
@@ -95,6 +96,7 @@ export default function NewOrder() {
             <button type="button" className="btn btn-primary w-full" disabled={sdk !== "ready" || total === 0 || paying} onClick={pay}>{paying ? "Waiting for PayPal…" : "Approve the hold in PayPal"}</button>
             {sdk === "loading" && <p className="text-sm text-muted" role="status">Loading PayPal…</p>}
             {sdk === "off" && <p className="text-sm text-stop" role="status">PayPal sandbox is not configured on this deployment, so checkout is unavailable.</p>}
+            {sdk === "ready" && total === 0 && <p className="text-sm text-muted">Add at least one item to enable the button.</p>}
             <ErrorNote message={error} />
           </section>
         </aside>

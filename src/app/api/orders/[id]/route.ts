@@ -5,7 +5,7 @@ import { toolkitRefund } from "@/lib/toolkit";
 import { approveSettlement, authorizeOrder, executeSettlement, pickLine, proposeSwap, recordConsent, refundIssue, reportIssue, ServiceError } from "@/lib/service";
 import { computeSettlement } from "@/lib/settlement";
 import { bySku, sameCategory } from "@/lib/catalog";
-import { MAX_PHOTO_BYTES, rateLimit, sniffImage } from "@/lib/guard";
+import { MAX_PHOTO_BYTES, MAX_PHOTOS_PER_ORDER, rateLimit, sniffImage } from "@/lib/guard";
 import { fail } from "@/lib/http";
 import type { Order } from "@/lib/types";
 
@@ -16,7 +16,7 @@ export const maxDuration = 60;
 const gateway: PayPalGateway = {
   ...restGateway,
   async refund(captureId, cents, requestId, note) {
-    try { const r = await toolkitRefund(captureId, cents, note); return { ...r, via: "agent-toolkit" }; }
+    try { const r = await toolkitRefund(captureId, cents, note, requestId); return { ...r, via: "agent-toolkit" }; }
     catch (e) { console.error("toolkit refund failed, using REST", e instanceof Error ? e.message : e); return restGateway.refund(captureId, cents, requestId, note); }
   },
 };
@@ -59,15 +59,20 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         const aiLimited = rateLimit(req, "swap", 6); if (aiLimited) return aiLimited;
         const product = bySku(body.sku);
         if (!product) throw new ServiceError("UNKNOWN_SKU", "That product is not in the shop's catalog.");
-        let photo: { bytes: Uint8Array; url: string } | null = null;
+        // Validate the order and line before anything is stored.
+        const before = await store.getOrder(id);
+        if (!before) throw new ServiceError("ORDER_NOT_FOUND", "No such order.", 404);
+        if (before.order.status !== "HELD" || before.order.lines.find((l) => l.id === body.lineId)?.status !== "out_of_stock") throw new ServiceError("NOT_OUT_OF_STOCK", "Mark the line out of stock before proposing a swap.", 409);
+        let photo: { bytes: Uint8Array; url: string; uploaded?: boolean } | null = null;
         const file = form?.get("photo");
         if (file instanceof File && file.size > 0) {
-          if (file.size > MAX_PHOTO_BYTES) throw new ServiceError("PHOTO_TOO_LARGE", "Photos can be up to 5 MB.", 413);
+          if (file.size > MAX_PHOTO_BYTES) throw new ServiceError("PHOTO_TOO_LARGE", "Photos can be up to 2 MB.", 413);
+          if ((before.order.photoCount ?? 0) >= MAX_PHOTOS_PER_ORDER) throw new ServiceError("PHOTO_LIMIT", `An order can hold up to ${MAX_PHOTOS_PER_ORDER} uploaded photos.`, 429);
           const bytes = new Uint8Array(await file.arrayBuffer()); const mediaType = sniffImage(bytes);
           if (!mediaType) throw new ServiceError("PHOTO_TYPE", "Upload a JPEG, PNG or WebP photo.", 415);
           const photoId = `up_${randomBytes(8).toString("hex")}`;
           await store.putPhoto(photoId, mediaType, bytes);
-          photo = { bytes, url: `/api/photos/${photoId}` };
+          photo = { bytes, url: `/api/photos/${photoId}`, uploaded: true };
         } else if (body.sample === "1") {
           const res = await fetch(new URL(product.labelImage, req.url), { cache: "force-cache" });
           if (res.ok) photo = { bytes: new Uint8Array(await res.arrayBuffer()), url: product.labelImage };
@@ -76,7 +81,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       }
       case "consent": {
         if (body.decision !== "accepted" && body.decision !== "declined") throw new ServiceError("BAD_DECISION", "Answer accepted or declined.");
-        ({ order } = await recordConsent(store, id, body.token, body.lineId, body.decision)); break;
+        ({ order } = await recordConsent(store, id, body.token, body.lineId, body.decision, body.proposalHash ?? "")); break;
       }
       case "approve": ({ order } = await approveSettlement(store, id, body.by ?? "shop")); break;
       case "execute": ({ order } = await executeSettlement(store, gateway, id, body.approvalId, Number(body.totalCents))); break;

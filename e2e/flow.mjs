@@ -5,6 +5,7 @@ const BASE = process.env.BASE_URL ?? "http://localhost:3000";
 const args = process.argv.slice(2);
 const videoDir = args.includes("--video") ? args[args.indexOf("--video") + 1] : null;
 const withSwap = args.includes("--swap");
+const voidRun = args.includes("--void"); // nothing can be packed: the whole hold is released
 const step = (m) => console.log(`[e2e] ${m}`);
 const browser = await chromium.launch({ proxy: process.env.HTTPS_PROXY && !BASE.includes("localhost") ? { server: process.env.HTTPS_PROXY } : process.env.HTTPS_PROXY ? { server: process.env.HTTPS_PROXY, bypass: "localhost,127.0.0.1" } : undefined });
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: "en-US", ...(videoDir ? { recordVideo: { dir: videoDir, size: { width: 1440, height: 900 } } } : {}) });
@@ -36,6 +37,21 @@ try {
 
   await page.goto(`${BASE}/shop/${orderId}`);
   const line = (name) => page.getByRole("article", { name });
+  if (voidRun) {
+    for (const n of ["Oat Drink Original", "Oat & Honey Granola", "Gluten-Free Penne (corn & rice)", "Tomato & Basil Sauce"]) { await line(n).getByRole("button", { name: "Out of stock" }).click(); await page.waitForTimeout(500); }
+    await page.getByRole("button", { name: "1. Approve this settlement" }).click();
+    const release = page.getByRole("button", { name: "2. Release the whole hold (void)" });
+    await page.waitForFunction(() => { const b = [...document.querySelectorAll("button")].find((x) => x.textContent?.startsWith("2. Release")); return b && !b.disabled; }, null, { timeout: 30000 });
+    await release.click();
+    await page.getByText("Released, nothing charged").first().waitFor({ timeout: 60000 });
+    step("voided: the whole hold was released");
+    await page.goto(shopperUrl);
+    await page.getByRole("heading", { name: "Your receipt" }).waitFor({ timeout: 30000 });
+    await page.waitForTimeout(25000); // give PayPal time to deliver the webhook
+    const v = await (await page.request.get(`${BASE}/api/orders/${orderId}`)).json();
+    console.log(JSON.stringify({ orderId, status: v.order.status, paypal: v.order.paypal, ledger: v.order.ledger.map((l) => [l.type, l.paypalId, l.amountCents, l.verified]) }, null, 2));
+    await context.close(); await browser.close(); process.exit(0);
+  }
   await line("Oat Drink Original").getByRole("button", { name: "Out of stock" }).click();
   for (const n of ["Oat & Honey Granola", "Gluten-Free Penne (corn & rice)", "Tomato & Basil Sauce"]) { await line(n).getByRole("button", { name: "Picked", exact: true }).click(); await page.waitForTimeout(400); }
   if (withSwap) {
